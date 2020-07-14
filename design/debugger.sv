@@ -1,5 +1,20 @@
 `timescale 1ns / 1ps
 
+typedef enum logic [3:0] {
+    PAUSE,
+    RESUME,
+    STEP,
+    RESET,
+    STATUS,
+    BR_PT_ADD,
+    BR_PT_RM,
+    MEM_RD,
+    MEM_WR,
+    REG_RD,
+    REG_WR
+} DEBUG_FN;
+
+
 module debugger(
     input clk,
 
@@ -22,22 +37,6 @@ module debugger(
     output reset,
     output valid
 );
-
-    typedef enum logic [3:0] {
-        PAUSE,
-        RESUME,
-        STEP,
-        RESET,
-        STATUS,
-        BR_PT_ADD,
-        BR_PT_RM,
-        MEM_RD,
-        MEM_WR,
-        REG_RD,
-        REG_WR
-    } DEBUG_FN;
-
-
 
     DEBUG_FN debug_fn;
     logic [31:0] d_rd;
@@ -127,34 +126,34 @@ module controller(
     
     reg mcu_paused = 0;
     logic mcu_paused_in;
-    
-    typedef enum logic [2:0] {
-        IDLE,
-        FLUSH,
-        WAIT_STEP,
-        BREAK_PT
-    } STATE;
-    
-    STATE ps = IDLE, ns;
-    
+
     logic [31:0] break_pts[8];
     initial for (int i = 0; i < 8; i++) break_pts[i] = 'Z;
     reg [2:0] num_break_pts = 0;
     logic [2:0] num_break_pts_in;
+
+    typedef enum logic [2:0] {
+        IDLE,
+        WAIT_FOR_PAUSE,
+        WAIT_FOR_READ,
+        WAIT_FOR_WRITE,
+        BREAK_HIT
+    } STATE;
+    
+    STATE ps = IDLE, ns;
+    
     
     always_ff @(posedge clk) begin 
         ps <= ns;
-        
         // update paused state
-        mcu_paused <= mcu_paused_in;
-        
+        mcu_paused <= mcu_paused_in; 
         // update number of breakpoints
         num_break_pts <= num_break_pts_in;
-        
+
         // compare pc to all breakpoints
         for (int i = 0; i < 8; i++) begin
             if ((pc + 4) == break_pts[i]) begin
-                ps <= BREAK_PT;
+                ns <= BREAK_HIT;
             end        
         end
     end
@@ -171,82 +170,23 @@ module controller(
         // keep these values by default
         num_break_pts_in = num_break_pts;
         mcu_paused_in = mcu_paused;
-        
+
+        // TODO: states
         case(ps)
             IDLE: begin
-                // stay in idle while no command given
-                if (!in_valid) begin
-                    ns = IDLE;
-                end
-                
-                // command given
-                else begin
-                    // set controller to busy
-                    ctrlr_busy = 1;
-                    
-                    case(debug_fn)
-                        // flush the pipeline, then pause
-                        PAUSE: begin
-                            flush = 1;
-                            ns = FLUSH;
-                            mcu_paused_in = 1;
-                        end
-                        
-                        // un-pause, return to idle
-                        RESUME: begin
-                            ns = IDLE;
-                            resume = 1;
-                            mcu_paused_in = 0;
-                        end
-                        
-                        // un-pause (for one cycle)
-                        STEP: begin
-                            resume = 1;
-                            ns = WAIT_STEP;
-                        end
-                        
-                        // add bp, increment count, return to idle
-                        BR_PT_ADD: begin
-                            break_pts[num_break_pts] <= addr;
-                            num_break_pts_in = num_break_pts + 1;
-                            ns = IDLE;
-                        end
-                    endcase
-                 end
             end
             
-            FLUSH: begin
-                // continue to wait for flush while mcu busy
-                ctrlr_busy = 1;
-                ns = FLUSH;
-                
-                // determine next state from debug function
-                if (!mcu_busy) begin
-                    case(debug_fn)
-                        // if paused, return to idle
-                        PAUSE: begin
-                            ns = IDLE;
-                        end
-                    endcase
-                end
-            end
-            
-            
-            WAIT_STEP: begin
-                // let one instruction through, then flush
-                ctrlr_busy = 1;
-                flush = 1;
-                ns = FLUSH;
+            WAIT_FOR_PAUSE: begin
             end
 
-            BREAK_PT: begin
-                ctrlr_busy = 1;
-                flush = 1;
-                ns = FLUSH;
+            WAIT_FOR_READ: begin
             end
-            
-            default: ns = IDLE;
-            
+
+            WAIT_FOR_WRITE: begin
+            end
+
+            BREAK_HIT: begin
+            end
         endcase
     end
 

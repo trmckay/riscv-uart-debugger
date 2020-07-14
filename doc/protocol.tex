@@ -9,6 +9,7 @@
 \usepackage[left=1in,right=1in,top=0.5in,bottom=1in]{geometry}
 
 \title{Pipeline control protocol}
+\author{Trevor McKay}
 \date{Summer 2020}
 
 \graphicspath{{./figures/}}
@@ -33,7 +34,7 @@ describes the protocol and implementation in the context of the debugger.
 \section{Connections}
 
 \begin{figure}[H]
-	\includegraphics[width=\textwidth]{pipeline_db}
+    \includegraphics[width=\textwidth]{pipeline_db}
 \end{figure}
 \medskip
 
@@ -44,6 +45,7 @@ decoded within the module. Both \emph{srx} and \emph{stx} can be ignored initial
 \emph{resume, flush}, and \emph{reset} control the flow of the pipeline. The \emph{valid} signal
 determines wether or not the controller is issuing a command.
 
+\newpage
 \section{Protocol}
 
 It can be assumed that reads, writes, and resumes will only be issued while the MCU is paused. It
@@ -54,7 +56,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
 
     \item\textbf{valid}\\
     Indicates that the debugger is issuing a command. The MCU should respond accordingly on the next positive clock edge.
-        The control signals except \emph{ready} will hold until \emph{mcu\_busy} goes low.
+    The control signals except \emph{ready} will hold until \emph{mcu\_busy} goes low.
 
     \item\textbf{resume}\\
     The MCU should resume normal operation. If this takes more than one cycle, keep \emph{mcu\_busy
@@ -70,6 +72,18 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
     state where external modules can interface with the processor without interfering with
     program execution.
 
+        \begin{verbatim}
+                 clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
+
+                  pc:    0x04  0x08  0x0C  0x0C  0x0C  0x0C
+
+            mcu_busy:  ______________|¯¯¯¯¯¯¯¯¯¯¯¯¯¯|_____
+
+               pause:  ___________|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|_____
+
+               valid:  _____________|¯|___________________
+        \end{verbatim}
+
     \item\textbf{reset}\\
     The program counter should be set to zero. It is worth noting that this only resets the position of
     execution, not the contents of memory. Clearing can be optionally implemented by
@@ -80,11 +94,40 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
      high at or before the next positive clock edge until the memory read is complete. The
     controller will attempt to read the data \emph{d\_rd} on the first positive clock edge that
     \emph{mcu\_busy} is low. If the address is out of range, set \emph{error} to high.
-    
+
+        \begin{verbatim}
+                 clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
+
+                  pc:  <_____________ 0x0C ______________>
+
+            mcu_busy:  ________|¯¯¯¯¯¯¯¯¯¯¯¯¯¯|___________
+
+                d_rd:  <______ Z ____________><__ 0x17 __>
+
+              mem_rd:  _______|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|___________
+
+               valid:  _______|¯|_________________________
+        \end{verbatim}
+
+    \newpage
     \item\textbf{mem\_wr}\\
     The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy} should go
     high at or before the next positive clock edge until the memory write is complete.
     If the address is out of range, do nothing.
+
+        \begin{verbatim}
+                 clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
+
+                  pc:  <____________ 0x0C _______________>
+
+            mcu_busy:  ______________|¯¯¯¯¯¯|_____________
+
+                d_in:  <_________ 0x17 __________><_ Z __>
+
+              mem_wr:  _____________|¯¯¯¯¯¯¯¯¯¯¯¯|________
+
+               valid:  _____________|¯|___________________
+        \end{verbatim}
 
     \item\textbf{rf\_rd}\\
     The MCU should read the register file at \emph{addr}. The \emph{mcu\_busy} signal should go
@@ -92,8 +135,22 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
     likely that the register file supports asynchronous reads and that \emph{mcu\_busy} never
     needs to go high. The controller will attempt to read the data \emph{d\_rd} on the first positive clock edge that
     \emph{mcu\_busy} is low. In the case of the register file, this will likely be very the next
-    cycle. If the address is out of range, set \emph{error} to high.
+    cycle. If the address is out of range, set \emph{error} to high. See the waveforms of
+    \emph{mem\_rd} for multicycle read examples.
 
+        \begin{verbatim}
+                 clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
+
+                  pc:  <____________ 0x0C _______________>
+
+            mcu_busy:  ___________________________________
+
+                d_rd:  <_____ Z ____><______ 0x17 _______>
+
+              reg_rd:  _____________|¯¯¯¯¯¯|______________
+
+               valid:  _____________|¯|___________________
+        \end{verbatim}
 
     \item\textbf{rf\_wr}\\
     The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy} should go
@@ -101,8 +158,23 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
     only take one cycle for the register file; if so, \emph{mcu\_busy} does not need to be high.
     If the address is out of range, set \emph{error} to high.
 
+        \begin{verbatim}
+                 clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
+
+                  pc:  <_____________ 0x0C ______________>
+
+            mcu_busy:  ___________________________________
+
+                d_in:  <________ 0x17 _____><_____ Z ____> 
+
+              reg_wr:  _____________|¯¯¯¯¯¯|______________
+
+               valid:  _____________|¯|___________________
+        \end{verbatim}
+
 \end{enumerate}
 
+\newpage
 \section{Implementation suggestions}
 There is no right or wrong way to implement this protocol, as long as the MCU responds correctly.
 However, there are some ways to make this easier.
