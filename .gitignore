@@ -1,0 +1,15 @@
+*.pdf
+*.vscode
+*.code-workspace
+*.synctex.gz
+*.run.xml
+*-blx.bib
+od/app/bin
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
