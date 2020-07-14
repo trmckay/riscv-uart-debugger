@@ -5,6 +5,7 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{hyperref}
 \usepackage[left=1in,right=1in,top=0.5in,bottom=1in]{geometry}
 
 \title{Pipeline control protocol}
@@ -20,10 +21,14 @@
 
 This protocol aims to make hardware add-ons for the Otter easier to develop. Control flow operations
 allow for easy manipulation of the state of the pipeline as well as many low-level operations such
-as memory and register editing, pause, or resume. The module is designed for use with a debugger,
-but a standard method for controlling the pipeline can be useful in many other scenarios. Any
-external application or module that consists of these basic operations can be more easily
-implemented with this module, including ones that interface with I/O.
+as memory and register editing, pause, or resume. The module is designed for use with a debugger and
+contains internal logic for this purpose. Fortunately, all debugging operations from polling memory
+to breakpoints can be implemented with functions or series of functions added by implementing this
+protocol. The controller (contains all of the outputs shown in the diagram below except the serial
+connection) and debugger serial decoder (translates serial data to debugging commands) are two
+submodules grouped together in one module. Since the HDL code makes distinctions between these modules,
+it is possible and encouraged to use the controller for other purposes. However, this document
+describes the protocol and implementation in the context of the debugger.
 
 \section{Connections}
 
@@ -47,26 +52,26 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
 
 \begin{enumerate}
 
-    \item\textbf{ready}\\
+    \item\textbf{valid}\\
     Indicates that the debugger is issuing a command. The MCU should respond accordingly on the next positive clock edge.
-    The control signals issued by the controller will hold until the \emph{mcu\_busy} goes low.
+        The control signals except \emph{ready} will hold until \emph{mcu\_busy} goes low.
 
     \item\textbf{resume}\\
-    The MCU should resume normal operation.
+    The MCU should resume normal operation. If this takes more than one cycle, keep \emph{mcu\_busy
+    }high to indicate this.
 
-    \newpage
     \item\textbf{pause}\\
-    The MCU should appear stop execution after the current instruction completes. The
+    The MCU should appear to stop execution after the current instruction completes. The
     \emph{mcu\_busy} signal should be high from the next positive edge until the pipeline is
     completely paused. This should be implemented by pausing the PC so that it does not increment
-    on the next positive edge and squashing any susequent instructions. Additionally, the pipeline
+    on the next positive edge and by squashing any susequent instructions. Additionally, the pipeline
     must be flushed such that all instructions in the pipeline when the \emph{pause} was
     issued are completed. When this is done, \emph{mcu\_busy} should go low. The MCU is now in a
     state where external modules can interface with the processor without interfering with
     program execution.
 
     \item\textbf{reset}\\
-    The program counter should be set to zero. It is worth noting that this only the position of
+    The program counter should be set to zero. It is worth noting that this only resets the position of
     execution, not the contents of memory. Clearing can be optionally implemented by
     pausing the MCU while writing zeros to the entire memory, only resetting the PC when done.
 
@@ -82,7 +87,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
     If the address is out of range, do nothing.
 
     \item\textbf{rf\_rd}\\
-    The MCU should read the register file at \emph{addr}. The \emph{mcu\_busy} should go
+    The MCU should read the register file at \emph{addr}. The \emph{mcu\_busy} signal should go
     high at or before the next positive clock edge until the read is complete. However, it is
     likely that the register file supports asynchronous reads and that \emph{mcu\_busy} never
     needs to go high. The controller will attempt to read the data \emph{d\_rd} on the first positive clock edge that
@@ -98,10 +103,25 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
 
 \end{enumerate}
 
+\section{Implementation suggestions}
+There is no right or wrong way to implement this protocol, as long as the MCU responds correctly.
+However, there are some ways to make this easier.
+
+Firstly, give your pipeline the ability to flush
+outside of just the \emph{pause} signal. In other words, have a \emph{flush} signal internal to the
+MCU that can be activated at discretion. Not only does it better decompose the control operations,
+but it can be useful to have this for interrupts.
+
+Additionally, have a register in the pipeline keep track of whether the pipeline is performing an
+operation. Quickly being able to determine this by looking at a single register
+will make it easier to MUX between the pipeline's internal inputs and the controller's inputs for
+the memory and register file. The controller will hold signals except for \emph{valid}, so it is not
+necessary to keep track of the type of operation.
+
 \vspace*{\fill}
 \begin{center}
     \noindent Contact Trevor McKay with questions.\\
-    trs.mckay@gmail.com
+    \href{mailto:trs.mckay@gmail.com}{trs.mckay@gmail.com}
 \end{center}
 
 \end{document}
