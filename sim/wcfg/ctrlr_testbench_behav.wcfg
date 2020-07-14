@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="ctrlr_testbench_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="\$unit_debugger_sv " />
+            <top_module name="ctrlr_testbench" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="40667fs"></ZoomStartTime>
+      <ZoomEndTime time="336668fs"></ZoomEndTime>
+      <Cursor1Time time="90000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="187"></NameColumnWidth>
+      <ValueColumnWidth column_width="73"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="13" />
+   <wave_markers>
+      <marker label="" time="390000" />
+   </wave_markers>
+   <wvobject type="other" fp_name="/ctrlr_testbench/MCU/ps">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">ps</obj_property>
+      <obj_property name="ObjectShortName">ps</obj_property>
+      <obj_property name="label">MCU state</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/ctrlr_testbench/pc">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">pc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc[31:0]</obj_property>
+      <obj_property name="label">pc</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/ctrlr_busy">
+      <obj_property name="ElementShortName">ctrlr_busy</obj_property>
+      <obj_property name="ObjectShortName">ctrlr_busy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/ctrlr_testbench/debug_fn">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">debug_fn[3:0]</obj_property>
+      <obj_property name="ObjectShortName">debug_fn[3:0]</obj_property>
+      <obj_property name="label">debug_fn</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/ctrlr_testbench/CTRLR_UT/ps">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">ps[2:0]</obj_property>
+      <obj_property name="ObjectShortName">ps[2:0]</obj_property>
+      <obj_property name="label">state</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/in_valid">
+      <obj_property name="ElementShortName">in_valid</obj_property>
+      <obj_property name="ObjectShortName">in_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/flush">
+      <obj_property name="ElementShortName">flush</obj_property>
+      <obj_property name="ObjectShortName">flush</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/resume">
+      <obj_property name="ElementShortName">resume</obj_property>
+      <obj_property name="ObjectShortName">resume</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/mcu_busy">
+      <obj_property name="ElementShortName">mcu_busy</obj_property>
+      <obj_property name="ObjectShortName">mcu_busy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/ctrlr_testbench/MCU/busy_cycles">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">busy_cycles[3:0]</obj_property>
+      <obj_property name="ObjectShortName">busy_cycles[3:0]</obj_property>
+      <obj_property name="label">busy_cycles</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/ctrlr_testbench/CTRLR_UT/mcu_paused">
+      <obj_property name="ElementShortName">mcu_paused</obj_property>
+      <obj_property name="ObjectShortName">mcu_paused</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/ctrlr_testbench/CTRLR_UT/break_pts[0]">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">[0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">[0][31:0]</obj_property>
+      <obj_property name="label">bp1</obj_property>
+   </wvobject>
+</wave_config>
