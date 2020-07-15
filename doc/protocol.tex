@@ -42,7 +42,7 @@ The module connects to the MCU, register file, and memory. Commands are recieved
 decoded within the module. Both \emph{srx} and \emph{stx} can be ignored initially. The signals \emph{rf\_wr, rf\_rd, addr,} and
 \emph{d\_in} connect to the register file for reads and writes. The \emph{mem\_wr}, \emph{mem\_rd},
 \emph{addr}, and \emph{d\_in} connect to the memory or memory hub for reads and writes. Finally,
-\emph{resume, flush}, and \emph{reset} control the flow of the pipeline. The \emph{valid} signal
+\emph{resume, pause}, and \emph{reset} control the flow of the pipeline. The \emph{valid} signal
 determines wether or not the controller is issuing a command.
 
 \newpage

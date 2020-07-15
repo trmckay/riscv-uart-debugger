@@ -26,21 +26,23 @@ module debugger(
     input [31:0] pc,
     input mcu_busy,
     input [31:0] d_rd,
+    input error,
 
     // debugger -> MCU
     output [31:0] d_in,
     output [31:0] addr,
     output rf_wr,
     output mem_wr,
-    output flush,
+    output pause,
     output resume,
     output reset,
     output valid
 );
 
     DEBUG_FN debug_fn;
-    logic [31:0] d_rd;
     logic sdec_ctrlr_valid;
+    logic [31:0] decoded_addr;
+    logic [31:0] decoded_d_in;
     logic ctrlr_busy;
     logic mcu_paused;
 
@@ -51,24 +53,26 @@ module debugger(
 //        .srx(srx),
 //        .stx(stx),
 //        .debug_fn(debug_fn),
-//        .addr(addr),
-//        .d_in(d_in),
+//        .addr(decoded_addr),
+//        .d_in(decoded_d_in),
 //        .out_valid(sdec_ctrlr_valid),
 //        .ctrlr_busy(ctrlr_busy),
 //        .d_rd(d_rd)
 //    );
 
     controller CTRLR(
+        // inputs
         .clk(clk),
+        .addr(decoded_addr),
         .debug_fn(debug_fn),
         .in_valid(sdec_ctrlr_valid),
         .pc(pc),
         .mcu_busy(mcu_busy),
-        .flush(flush),
+        // outputs
+        .pause(pause),
         .reset(reset),
         .resume(resume),
         .out_valid(ctrlr_mcu_valid),
-        .d_rd(d_rd),
         .ctrlr_busy(ctrlr_busy)
     );
 
@@ -98,6 +102,7 @@ endmodule
 
 
 module controller(
+    // INPUTS
     input clk,
 
     // sdec -> controller
@@ -109,8 +114,9 @@ module controller(
     input logic [31:0] pc,
     input logic mcu_busy,
     
+    // OUTPUTS
     // controller -> MCU
-    output logic flush,
+    output logic pause,
     output logic reset,
     output logic resume,
     output logic out_valid,
@@ -120,7 +126,7 @@ module controller(
     output logic mem_wr,
 
     // controller -> sdec
-    output logic [31:0] d_rd,
+    output logic [31:0] ctlr_sdec_d_rd,
     output logic ctrlr_busy
     );
     
@@ -130,53 +136,159 @@ module controller(
     logic [31:0] break_pts[8];
     initial for (int i = 0; i < 8; i++) break_pts[i] = 'Z;
     reg [2:0] num_break_pts = 0;
-    logic [2:0] num_break_pts_in;
+    logic bp_add, hit;
 
-    typedef enum logic [2:0] {
+    typedef enum logic [3:0] {
         IDLE,
         WAIT_FOR_PAUSE,
+        WAIT_FOR_RESUME,
         WAIT_FOR_READ,
         WAIT_FOR_WRITE,
+        WAIT_FOR_STEP,
         BREAK_HIT
     } STATE;
     
-    STATE ps = IDLE, ns;
+    STATE ps = IDLE, ns; 
     
-    
-    always_ff @(posedge clk) begin 
-        ps <= ns;
+    always_ff @(posedge clk) begin
         // update paused state
         mcu_paused <= mcu_paused_in; 
-        // update number of breakpoints
-        num_break_pts <= num_break_pts_in;
 
         // compare pc to all breakpoints
-        for (int i = 0; i < 8; i++) begin
-            if ((pc + 4) == break_pts[i]) begin
-                ns <= BREAK_HIT;
-            end        
+        hit = 0;
+        if (!mcu_paused) begin
+            for (int i = 0; i < 8; i++) begin
+                if ((pc + 4) == break_pts[i]) begin
+                    ps <= BREAK_HIT;
+                    hit = 1;
+                end
+            end
+        end
+        if (!hit) ps <= ns;
+        
+        // load in new breakpoints
+        if (bp_add) begin
+            break_pts[num_break_pts] <= addr;
+            num_break_pts <= num_break_pts + 1;
         end
     end
     
     always_comb begin
-        // default values
-        flush = 0;
-        reset = 0;
-        resume = 0;
-        out_valid = 0;
-        d_rd = 'Z;
-        ctrlr_busy = 0;
+        pause = 'Z;
+        reset = 'Z;
+        resume = 'Z;
+        bp_add = 0;
+        ns = IDLE;
+
+        /* controller will output no commands and
+        * accept no input in its default state */
         
+        // output is invalid unless specified
+        out_valid = 0;
+        // busy unless specified
+        ctrlr_busy = 1;
+
         // keep these values by default
-        num_break_pts_in = num_break_pts;
         mcu_paused_in = mcu_paused;
 
-        // TODO: states
+        /* CURRENTLY SUPPORTS:
+            * pause
+            * resume
+            * step
+            * add break point
+            * pause on break point
+        */
+
+        /* NOT YET IMPLEMENTED:
+            * remove breakpoint
+            * status
+            * read memory
+            * write memory
+            * read register
+            * write register
+        */
+
         case(ps)
+
             IDLE: begin
+                // check for valid from sdec high
+                if (in_valid) begin
+                    case(debug_fn)
+                        PAUSE: begin
+                            pause = 1;
+                            out_valid = 1;
+                            ns = WAIT_FOR_PAUSE;
+                        end
+                        RESUME: begin
+                            resume = 1;
+                            out_valid = 1;
+                            ns = WAIT_FOR_RESUME;
+                        end
+                        STEP: begin
+                            // step only supported if MCU is paused
+                            if (mcu_paused) begin
+                                resume = 1;
+                                out_valid = 1;
+                                ns = WAIT_FOR_STEP;
+                               end
+                            else begin
+                                ctrlr_busy = 0;
+                                ns = IDLE;
+                            end
+                        end
+                        BR_PT_ADD: begin
+                            ctrlr_busy = 0;
+                            bp_add = 1;
+                            ns = IDLE;
+                        end
+                    endcase
+                end
+                // no command given, stay idle
+                else begin
+                    ctrlr_busy = 0;
+                    ns = IDLE;
+                end
             end
             
             WAIT_FOR_PAUSE: begin
+                if (mcu_busy) begin
+                    out_valid = 1;
+                    pause = 1;
+                    ns = WAIT_FOR_PAUSE;
+                end
+                else begin
+                    mcu_paused_in = 1;
+                    ctrlr_busy = 0;
+                    ns = IDLE;
+                end
+            end
+
+            WAIT_FOR_RESUME: begin
+                if (mcu_busy) begin
+                    resume = 1;
+                    out_valid = 1;
+                    ns = WAIT_FOR_RESUME;
+                end
+                else begin
+                    mcu_paused_in = 0;
+                    ctrlr_busy = 0;
+                    ns = IDLE;
+                end
+            end
+
+            WAIT_FOR_STEP: begin
+                // wait for resume
+                if (mcu_busy) begin
+                    resume = 1;
+                    out_valid = 1;
+                    ns = WAIT_FOR_STEP;
+                end
+                // pause on next cycle
+                else begin
+                    pause = 1;
+                    out_valid = 1;
+                    ns = WAIT_FOR_PAUSE;
+                end
             end
 
             WAIT_FOR_READ: begin
@@ -186,7 +298,12 @@ module controller(
             end
 
             BREAK_HIT: begin
+                pause = 1;
+                out_valid = 1;
+                ns = WAIT_FOR_PAUSE;
             end
+            
+            default: ns = IDLE;
         endcase
     end
 
