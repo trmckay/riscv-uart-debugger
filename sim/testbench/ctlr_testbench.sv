@@ -1,9 +1,8 @@
 `timescale 1ns / 1ps
 
-
 module mcu_stub(
     input clk,
-    input logic flush,
+    input logic pause,
     input logic reset,
     input logic resume,
     input logic in_valid,
@@ -52,7 +51,7 @@ module mcu_stub(
                 end
                 
                 else begin
-                    if (flush) begin
+                    if (pause) begin
                         busy_cycles_in = 5;
                         mcu_busy = 1;
                         pause_in = 1;
@@ -72,15 +71,9 @@ module mcu_stub(
                     end
                     
                     if (rf_rd) begin
-                        busy_cycles_in = 1;
-                        mcu_busy = 1;
-                        ns = BUSY;
                     end
                     
                     if (mem_rd) begin
-                        busy_cycles_in = 12;
-                        mcu_busy = 1;
-                        ns = BUSY;
                     end
                     
                     if (rf_wr) begin
@@ -107,13 +100,14 @@ module ctrlr_testbench();
     reg [31:0] pc = 0;
     logic [31:0] addr, d_in;
     DEBUG_FN debug_fn;
-    logic in_valid, mcu_busy;
+    logic in_valid, valid, mcu_busy;
     logic [31:0] d_out;
-    
+
+    assign in_valid = valid;
     assign d_in = d_out;
     
     // outputs
-    logic flush, reset, resume, out_valid, ctrlr_busy, rf_rd, rf_wr, mem_rd, mem_wr;
+    logic pause, reset, resume, out_valid, ctrlr_busy, rf_rd, rf_wr, mem_rd, mem_wr;
     logic [31:0] d_rd;
     
     controller CTRLR_UT(.*);
@@ -123,26 +117,58 @@ module ctrlr_testbench();
         # 10
         clk = ~clk;
     end
-        
-    initial begin
-        in_valid = 0;
-        debug_fn = RESUME;
-        
-        // issue pause
-        # 40
-        debug_fn = PAUSE;
-        #12
-        in_valid = 1;
-        #25
-        in_valid = 0;
-        
-        #200
-        // issue resume
-        debug_fn = RESUME;
-        in_valid = 1;
-        #20
-        in_valid = 0;
 
+    // send debug_fn to controller attached to mcu stub
+    initial begin
+        debug_fn = NONE;
+        addr = 'Z;
+        d_in = 'Z;
+        valid = 0;
+
+        // test pause
+        # 20
+        debug_fn = PAUSE;
+        # 3
+        // signals may not be perfectly syncd
+        valid = 1;
+        # 20;
+        debug_fn = NONE;
+        valid = 0;
+
+        // wait
+        # 300
+
+        // test step
+        debug_fn = STEP;
+        # 3
+        valid = 1;
+        # 20
+        valid = 0;
+        debug_fn = NONE;
+
+        // wait
+        # 300
+
+        // test add break point
+        debug_fn = BR_PT_ADD;
+        addr = 'h100;
+        # 3
+        valid = 1;
+        # 20
+        valid = 0;
+        addr = 'Z;
+        debug_fn = NONE;
+        
+        // wait
+        # 1000
+
+        // test resume
+        debug_fn = RESUME;
+        # 3
+        valid = 1;
+        # 20
+        valid = 0;
+        debug_fn = NONE;
     end
 
 endmodule

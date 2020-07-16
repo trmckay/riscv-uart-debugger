@@ -1,6 +1,18 @@
 `timescale 1ns / 1ps
 
+/* TODO:
+* finish controller
+* debug controller
+* general purpose serial module?
+* serial decoder for debugger
+* integration
+* testing
+* write documentation
+*/
+
+
 typedef enum logic [3:0] {
+    NONE,
     PAUSE,
     RESUME,
     STEP,
@@ -31,113 +43,102 @@ module debugger(
     // debugger -> MCU
     output [31:0] d_in,
     output [31:0] addr,
-    output rf_wr,
-    output mem_wr,
     output pause,
     output resume,
     output reset,
+    output reg_rd,
+    output reg_wr,
+    output mem_rd,
+    output mem_wr,
     output valid
 );
 
-    DEBUG_FN debug_fn;
-    logic sdec_ctrlr_valid;
-    logic [31:0] decoded_addr;
-    logic [31:0] decoded_d_in;
-    logic ctrlr_busy;
-    logic mcu_paused;
-
-    logic ctrlr_mcu_valid;
-
-//    serial SDEC(
-//        .clk(clk),
-//        .srx(srx),
-//        .stx(stx),
-//        .debug_fn(debug_fn),
-//        .addr(decoded_addr),
-//        .d_in(decoded_d_in),
-//        .out_valid(sdec_ctrlr_valid),
-//        .ctrlr_busy(ctrlr_busy),
-//        .d_rd(d_rd)
-//    );
-
-    controller CTRLR(
-        // inputs
-        .clk(clk),
-        .addr(decoded_addr),
-        .debug_fn(debug_fn),
-        .in_valid(sdec_ctrlr_valid),
-        .pc(pc),
-        .mcu_busy(mcu_busy),
-        // outputs
-        .pause(pause),
-        .reset(reset),
-        .resume(resume),
-        .out_valid(ctrlr_mcu_valid),
-        .ctrlr_busy(ctrlr_busy)
-    );
+    // instantiate serial module
+    
+    // instantiate controller
 
 endmodule
 
 
-//module serial(
-//    input clk,
-//    input reset,
+module serial(
+    input clk,
+    input reset,
 
-//    // user <-> serial
-//    input srx,
-//    output stx,
+    // user <-> serial
+        input srx,
+        output stx,
 
-//    // controller -> sdec
-//    input ctrlr_busy,
-//    input [31:0] d_rd,
+    // controller -> sdec
+        input ctrlr_busy,
+        input [31:0] d_rd,
+    // sdec -> controller
+        output DEBUG_FN debug_fn,
+        output [31:0] addr,
+        output [31:0] d_in,
+        output out_valid
+);
 
-//    // sdec -> controller
-//    output DEBUG_FN debug_fn,
-//    output [31:0] addr,
-//    output [31:0] d_in,
-//    output out_valid
-//);
+    // decode and send serial data
 
-//endmodule
+endmodule
 
+
+/* CURRENTLY SUPPORTS:
+    * pause
+    * resume
+    * step
+    * add break point
+    * pause on break point
+*/
+
+/* NOT YET IMPLEMENTED:
+    * remove breakpoint
+    * status
+    * read memory
+    * write memory
+    * read register
+    * write register
+*/
 
 module controller(
     // INPUTS
-    input clk,
+        input clk,
 
-    // sdec -> controller
-    input DEBUG_FN debug_fn,
-    input logic [31:0] addr,
-    input logic in_valid,
-    
-    // MCU -> controller
-    input logic [31:0] pc,
-    input logic mcu_busy,
+        // sdec -> controller
+            input DEBUG_FN debug_fn,
+            input logic [31:0] addr,
+            input logic in_valid,
+            
+        // MCU -> controller
+            input logic [31:0] pc,
+            input logic mcu_busy,
     
     // OUTPUTS
-    // controller -> MCU
-    output logic pause,
-    output logic reset,
-    output logic resume,
-    output logic out_valid,
-    output logic rf_rd,
-    output logic mem_rd,
-    output logic rf_wr,
-    output logic mem_wr,
+        // controller -> MCU
+            output logic pause,
+            output logic reset,
+            output logic resume,
+            output logic out_valid,
+            output logic rf_rd,
+            output logic mem_rd,
+            output logic rf_wr,
+            output logic mem_wr,
 
-    // controller -> sdec
-    output logic [31:0] ctlr_sdec_d_rd,
-    output logic ctrlr_busy
+        // controller -> sdec
+            output logic ctrlr_busy
     );
     
+    // keep track of mcu state
     reg mcu_paused = 0;
     logic mcu_paused_in;
 
+    // breakpoints
     logic [31:0] break_pts[8];
     initial for (int i = 0; i < 8; i++) break_pts[i] = 'Z;
     reg [2:0] num_break_pts = 0;
     logic bp_add, hit;
 
+    // states for controller
     typedef enum logic [3:0] {
         IDLE,
         WAIT_FOR_PAUSE,
@@ -191,23 +192,6 @@ module controller(
         // keep these values by default
         mcu_paused_in = mcu_paused;
 
-        /* CURRENTLY SUPPORTS:
-            * pause
-            * resume
-            * step
-            * add break point
-            * pause on break point
-        */
-
-        /* NOT YET IMPLEMENTED:
-            * remove breakpoint
-            * status
-            * read memory
-            * write memory
-            * read register
-            * write register
-        */
-
         case(ps)
 
             IDLE: begin
@@ -242,7 +226,7 @@ module controller(
                             ns = IDLE;
                         end
                     endcase
-                end
+                end            
                 // no command given, stay idle
                 else begin
                     ctrlr_busy = 0;
@@ -277,16 +261,15 @@ module controller(
             end
 
             WAIT_FOR_STEP: begin
+                out_valid = 1;
                 // wait for resume
                 if (mcu_busy) begin
                     resume = 1;
-                    out_valid = 1;
                     ns = WAIT_FOR_STEP;
                 end
                 // pause on next cycle
                 else begin
                     pause = 1;
-                    out_valid = 1;
                     ns = WAIT_FOR_PAUSE;
                 end
             end
