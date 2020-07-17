@@ -138,20 +138,9 @@ module ctrlr_testbench();
         // wait
         # 300
 
-        // test step
-        debug_fn = STEP;
-        # 3
-        valid = 1;
-        # 20
-        valid = 0;
-        debug_fn = NONE;
-
-        // wait
-        # 300
-
         // test add break point
         debug_fn = BR_PT_ADD;
-        addr = 'h100;
+        addr = 'h10;
         # 3
         valid = 1;
         # 20
@@ -160,7 +149,7 @@ module ctrlr_testbench();
         debug_fn = NONE;
         
         // wait
-        # 1000
+        # 40
 
         // test resume
         debug_fn = RESUME;
