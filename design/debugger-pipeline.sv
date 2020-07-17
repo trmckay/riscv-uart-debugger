@@ -156,13 +156,13 @@ module controller(
     // states for controller
     typedef enum logic [3:0] {
         IDLE,
-        WAIT_FOR_PAUSE,
-        WAIT_FOR_RESUME,
-        WAIT_FOR_MEM_RD,
-        WAIT_FOR_MEM_WR,
-        WAIT_FOR_REG_RD,
-        WAIT_FOR_REG_WR,
-        WAIT_FOR_STEP,
+        WAIT_PAUSE,
+        WAIT_RESUME,
+        WAIT_MEM_RD,
+        WAIT_MEM_WR,
+        WAIT_REG_RD,
+        WAIT_REG_WR,
+        WAIT_STEP,
         BREAK_HIT,
         REPLY
     } STATE;
@@ -193,11 +193,15 @@ module controller(
     end
     
     always_comb begin
-        pause = 'Z;
-        reset = 'Z;
-        resume = 'Z;
-        bp_add = 0;
-        ns = IDLE;
+        pause = 0;
+        reset = 0;
+        resume = 0;
+        bp_add= 0;
+        rf_rd = 0;
+        rf_wr = 0;
+        mem_rd = 0;
+        mem_wr = 0;
+        ns  = IDLE;
 
         /* controller will output no commands and
         * accept no input in its default state */
@@ -219,19 +223,19 @@ module controller(
                         PAUSE: begin
                             pause = 1;
                             out_valid = 1;
-                            ns = WAIT_FOR_PAUSE;
+                            ns = WAIT_PAUSE;
                         end
                         RESUME: begin
                             resume = 1;
                             out_valid = 1;
-                            ns = WAIT_FOR_RESUME;
+                            ns = WAIT_RESUME;
                         end
                         STEP: begin
                             // step only supported if MCU is paused
                             if (mcu_paused) begin
                                 resume = 1;
                                 out_valid = 1;
-                                ns = WAIT_FOR_STEP;
+                                ns = WAIT_STEP;
                                end
                             else begin
                                 ctrlr_busy = 0;
@@ -245,11 +249,11 @@ module controller(
                         end
                         MEM_RD: begin
                             mem_rd = 1;
-                            ns = WAIT_FOR_MEM_RD;
+                            ns = WAIT_MEM_RD;
                         end
                         MEM_WR: begin
                             mem_wr = 1;
-                            ns = WAIT_FOR_MEM_WR;
+                            ns = WAIT_MEM_WR;
                         end
                     endcase
                 end            
@@ -260,11 +264,11 @@ module controller(
                 end
             end
             
-            WAIT_FOR_PAUSE: begin
+            WAIT_PAUSE: begin
                 if (mcu_busy) begin
                     out_valid = 1;
                     pause = 1;
-                    ns = WAIT_FOR_PAUSE;
+                    ns = WAIT_PAUSE;
                 end
                 else begin
                     mcu_paused_in = 1;
@@ -273,11 +277,11 @@ module controller(
                 end
             end
 
-            WAIT_FOR_RESUME: begin
+            WAIT_RESUME: begin
                 if (mcu_busy) begin
                     resume = 1;
                     out_valid = 1;
-                    ns = WAIT_FOR_RESUME;
+                    ns = WAIT_RESUME;
                 end
                 else begin
                     mcu_paused_in = 0;
@@ -286,25 +290,25 @@ module controller(
                 end
             end
 
-            WAIT_FOR_STEP: begin
+            WAIT_STEP: begin
                 out_valid = 1;
                 // wait for resume
                 if (mcu_busy) begin
                     resume = 1;
-                    ns = WAIT_FOR_STEP;
+                    ns = WAIT_STEP;
                 end
                 // pause on next cycle
                 else begin
                     pause = 1;
-                    ns = WAIT_FOR_PAUSE;
+                    ns = WAIT_PAUSE;
                 end
             end
 
-            WAIT_FOR_MEM_RD: begin
+            WAIT_MEM_RD: begin
                 if (mcu_busy) begin
                     out_valid = 1;
                     mem_rd = 1;
-                    ns = WAIT_FOR_MEM_RD;
+                    ns = WAIT_MEM_RD;
                 end
                 else begin
                     ctrlr_busy = 0;
@@ -312,11 +316,11 @@ module controller(
                 end
             end
 
-            WAIT_FOR_MEM_WR: begin
+            WAIT_MEM_WR: begin
                 if (mcu_busy) begin
                     out_valid = 1;
                     mem_wr = 1;
-                    ns = WAIT_FOR_MEM_RD;
+                    ns = WAIT_MEM_RD;
                 end
                 else begin
                     ctrlr_busy = 0;
@@ -324,11 +328,11 @@ module controller(
                 end
             end
 
-            WAIT_FOR_REG_RD: begin
+            WAIT_REG_RD: begin
                 if (mcu_busy) begin
                     out_valid = 1;
                     rf_rd = 1;
-                    ns = WAIT_FOR_REG_RD;
+                    ns = WAIT_REG_RD;
                 end
                 else begin
                     ctrlr_busy = 0;
@@ -336,11 +340,11 @@ module controller(
                 end
             end
 
-            WAIT_FOR_REG_WR: begin
+            WAIT_REG_WR: begin
                 if (mcu_busy) begin
                     out_valid = 1;
                     rf_wr = 1;
-                    ns = WAIT_FOR_REG_WR;
+                    ns = WAIT_REG_WR;
                 end
                 else begin
                     ctrlr_busy = 0;
@@ -351,7 +355,7 @@ module controller(
             BREAK_HIT: begin
                 pause = 1;
                 out_valid = 1;
-                ns = WAIT_FOR_PAUSE;
+                ns = WAIT_PAUSE;
             end
 
             REPLY: begin
