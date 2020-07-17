@@ -1,3 +1,10 @@
+
+/* MODULE: Pipeline Debugger and Controller
+*  AUTHOR: Trevor McKay
+* VERSION: 0
+*    DATE: 2020-07-16
+*/
+
 `timescale 1ns / 1ps
 
 /* TODO:
