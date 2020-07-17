@@ -1,9 +1,16 @@
-
-/* MODULE: Pipeline Debugger and Controller
-*  AUTHOR: Trevor McKay
-* VERSION: 0
-*    DATE: 2020-07-16
-*/
+//////////////////////////////////////////////////////////////////////////////////
+// Company: Cal Poly, SLO
+// Engineer: Trevor McKay
+// 
+// Module Name: Pipeline debugger and controller
+// Project Name: Otter
+// Description: Pipelined Otter debugger based on project by Keefe Johnson
+// 
+// 
+// Revision: 0.10
+// Revision 0.01 - File Created
+// Revision 0.10 - Controller first rev.
+//////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
 
