@@ -39,7 +39,6 @@ typedef enum logic [3:0] {
     REG_WR
 } DEBUG_FN;
 
-
 module debugger(
     input clk,
 

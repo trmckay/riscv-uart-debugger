@@ -5,24 +5,25 @@
    <db_ref_list>
       <db_ref path="ctrlr_testbench_behav.wdb" id="1">
          <top_modules>
-            <top_module name="\$unit_debugger_sv " />
+            <top_module name="\$unit_debugger_pipeline_sv " />
             <top_module name="ctrlr_testbench" />
             <top_module name="glbl" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="348168fs"></ZoomStartTime>
-      <ZoomEndTime time="497169fs"></ZoomEndTime>
-      <Cursor1Time time="363068fs"></Cursor1Time>
+      <ZoomStartTime time="458284fs"></ZoomStartTime>
+      <ZoomEndTime time="528585fs"></ZoomEndTime>
+      <Cursor1Time time="487684fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="177"></NameColumnWidth>
-      <ValueColumnWidth column_width="73"></ValueColumnWidth>
+      <NameColumnWidth column_width="174"></NameColumnWidth>
+      <ValueColumnWidth column_width="83"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="16" />
    <wave_markers>
       <marker label="" time="370000" />
+      <marker label="" time="470000" />
    </wave_markers>
    <wvobject type="other" fp_name="/ctrlr_testbench/MCU/ps">
       <obj_property name="DisplayName">label</obj_property>
