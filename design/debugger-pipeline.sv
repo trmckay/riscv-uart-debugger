@@ -15,8 +15,6 @@
 `timescale 1ns / 1ps
 
 /* TODO:
-* finish controller
-* debug controller
 * general purpose serial module?
 * serial decoder for debugger
 * integration

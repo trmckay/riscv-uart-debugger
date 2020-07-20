@@ -22,7 +22,7 @@
 
 \section{Overview}
 
-This protocol aims to make hardware add-ons for the Otter easier to develop. Control flow operations
+This protocol aims to make hardware add-ons and software for the Otter easier to develop. Control flow operations
 allow for easy manipulation of the state of the pipeline as well as many low-level operations such
 as memory and register editing, pause, or resume. The module is designed for use with a debugger and
 contains internal logic for this purpose. Fortunately, all debugging operations from polling memory
@@ -32,6 +32,9 @@ connection) and debugger serial decoder (translates serial data to debugging com
 submodules grouped together in one module. Since the HDL code makes distinctions between these modules,
 it is possible and encouraged to use the controller for other purposes. However, this document
 describes the protocol and implementation in the context of the debugger.
+
+\medskip
+\noindent\underline{\href{https://github.com/trmckay/pipeline-debugger}{GitHub repository for the pipeline debugger}}
 
 \section{Connections}
 
