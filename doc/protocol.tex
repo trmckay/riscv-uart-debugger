@@ -61,7 +61,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
 
     \item\textbf{valid}\\
     Indicates that the debugger is issuing a command. The MCU should respond accordingly on the next positive clock edge.
-    The control signals except \emph{ready} will hold until \emph{mcu\_busy} goes low.
+    The control signals except \emph{valid} will hold until \emph{mcu\_busy} goes low.
 
     \item\textbf{resume}\\
     The MCU should resume normal operation. If this takes more than one cycle, keep \emph{mcu\_busy

@@ -2,25 +2,25 @@
 // Company: Cal Poly, SLO
 // Engineer: Trevor McKay
 // 
-// Module Name: Pipeline debugger and controller
-// Project Name: Otter
-// Description: Pipelined Otter debugger based on project by Keefe Johnson
+// Module Name: Otter General Purpose Controller (OGPC)
+// Description: Hardware module to add support for remote debugging, programming,
+// etc. via low-level control of a target MCU.
 // 
-// 
-// Revision: 0.10
-// Revision 0.01 - File Created
-// Revision 0.10 - Controller first rev.
-//////////////////////////////////////////////////////////////////////////////////
+// Revision: 0.11
+//
+// Revision  0.01 - File Created
+// Revision  0.10 - Controller first rev.
+// Revision  0.11 - Increase project scope
+//
+// TODO:
+//   - serial decoder
+//   - MCU integration
+//   - testing
+//   - write documentation
+//
+/////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
-
-/* TODO:
-* general purpose serial module?
-* serial decoder for debugger
-* integration
-* testing
-* write documentation
-*/
 
 typedef enum logic [3:0] {
     NONE,
@@ -37,7 +37,12 @@ typedef enum logic [3:0] {
     REG_WR
 } DEBUG_FN;
 
-module debugger(
+
+/////////////////////////////////////////////////////////////////////////////////
+// Module Name: Controller Wrapper
+// Description: Link the serial decoder and controller FSM 
+/////////////////////////////////////////////////////////////////////////////////
+module mcu_controller(
     input clk,
 
     // user <-> debugger (via serial)
@@ -65,11 +70,15 @@ module debugger(
 
     // instantiate serial module
     
-    // instantiate controller
+    // instantiate fsm
 
-endmodule
+endmodule // module mcu_controller
 
 
+/////////////////////////////////////////////////////////////////////////////////
+// Module Name: Serial Decoder
+// Description: Decode incoming UART commands and encode responses
+/////////////////////////////////////////////////////////////////////////////////
 module serial(
     input clk,
     input reset,
@@ -90,27 +99,14 @@ module serial(
 
     // decode and send serial data
 
-endmodule
+endmodule // module serial
 
 
-/* CURRENTLY SUPPORTS:
-    * pause
-    * resume
-    * step
-    * add break point
-    * pause on break point
-*/
-
-/* NOT YET IMPLEMENTED:
-    * remove breakpoint
-    * status
-    * read memory
-    * write memory
-    * read register
-    * write register
-*/
-
-module controller(
+/////////////////////////////////////////////////////////////////////////////////
+// Module Name: Controller FSM
+// Description: Issue relevent control signals for each debug function
+/////////////////////////////////////////////////////////////////////////////////
+module controller_fsm(
     // INPUTS
         input clk,
 
@@ -187,7 +183,7 @@ module controller(
             break_pts[num_break_pts] <= addr;
             num_break_pts <= num_break_pts + 1;
         end
-    end
+    end // always_ff @(posedge clk)
     
     always_comb begin
         pause = 0;
@@ -252,7 +248,7 @@ module controller(
                             mem_wr = 1;
                             ns = WAIT_MEM_WR;
                         end
-                    endcase
+                    endcase // case(debug_fn)
                 end            
                 // no command given, stay idle
                 else begin
@@ -359,7 +355,7 @@ module controller(
             end
             
             default: ns = IDLE;
-        endcase
-    end
+        endcase // case(ps)
+    end // always_comb
 
-endmodule
+endmodule // module controller_fsm
