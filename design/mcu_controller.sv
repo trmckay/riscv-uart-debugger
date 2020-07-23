@@ -23,25 +23,25 @@
 `timescale 1ns / 1ps
 
 typedef enum logic [3:0] {
-    NONE,
-    PAUSE,
-    RESUME,
-    STEP,
-    RESET,
-    STATUS,
-    BR_PT_ADD,
-    BR_PT_RM,
-    MEM_RD,
-    MEM_WR,
-    REG_RD,
-    REG_WR
+    NONE        = 4'h0,
+    PAUSE       = 4'h1,
+    RESUME      = 4'h2,
+    STEP        = 4'h3,
+    RESET       = 4'h4,
+    STATUS      = 4'h5,
+    BR_PT_ADD   = 4'h6,
+    BR_PT_RM    = 4'h7,
+    MEM_RD      = 4'h8,
+    MEM_WR      = 4'h9,
+    REG_RD      = 4'hA,
+    REG_WR      = 4'hB
 } DEBUG_FN;
-
 
 /////////////////////////////////////////////////////////////////////////////////
 // Module Name: Controller Wrapper
 // Description: Link the serial decoder and controller FSM 
 /////////////////////////////////////////////////////////////////////////////////
+
 module mcu_controller(
     input clk,
 
@@ -68,10 +68,46 @@ module mcu_controller(
     output valid
 );
 
-    // instantiate serial module
-    
-    // instantiate fsm
+    logic l_ctrlr_busy, l_serial_valid, l_send_reply;
+    DEBUG_FN l_debug_fn;
+    logic [31:0] l_addr;
 
+    assign addr = l_addr;
+
+    serial serial(
+        .clk(clk),
+        .reset(1'b0),
+        .srx(srx),
+        .ctrlr_busy(l_ctrlr_busy),
+        .d_rd(d_rd),
+        .in_valid(l_send_reply),
+        
+        .stx(stx),
+        .debug_fn(l_debug_fn),
+        .addr(l_addr),
+        .d_in(d_in),
+        .out_valid(l_serial_valid)
+    );
+    
+    controller_fsm fsm(
+        .clk(clk),
+        .debug_fn(l_debug_fn),
+        .addr(l_addr),
+        .in_valid(serial_valid),
+        .pc(pc),
+        .mcu_busy(mcu_busy),
+
+        .pause(pause),
+        .reset(reset),
+        .resume(resume),
+        .rf_rd(rf_rd),
+        .rf_wr(rf_wr),
+        .mem_rd(mem_rd),
+        .mem_wr(mem_wr),
+        .out_valid(valid),
+        .ctrlr_busy(l_ctrlr_busy)
+    );
+    
 endmodule // module mcu_controller
 
 
@@ -79,6 +115,7 @@ endmodule // module mcu_controller
 // Module Name: Serial Decoder
 // Description: Decode incoming UART commands and encode responses
 /////////////////////////////////////////////////////////////////////////////////
+
 module serial(
     input clk,
     input reset,
@@ -90,6 +127,8 @@ module serial(
     // controller -> sdec
         input ctrlr_busy,
         input [31:0] d_rd,
+        input in_valid,
+
     // sdec -> controller
         output DEBUG_FN debug_fn,
         output [31:0] addr,
@@ -97,7 +136,26 @@ module serial(
         output out_valid
 );
 
-    // decode and send serial data
+    logic [7:0] send_byte, rcv_byte;
+    logic rx_done, tx_done, tx_valid, tx_active;
+
+    uart_rx reciever (
+        .i_Clock(clk),
+        .i_Rx_Serial(srx),
+
+        .o_Rx_DV(rx_done),
+        .o_Rx_Byte(rcv_byte)
+    );
+
+    uart_tx transmitter(
+        .i_Clock(clk),
+        .i_Tx_DV(tx_valid),
+        .i_Tx_Byte(send_byte),
+
+        .o_Tx_Active(tx_active),
+        .o_Tx_Serial(stx),
+        .o_Tx_Done(tx_done)
+    );
 
 endmodule // module serial
 
@@ -106,6 +164,7 @@ endmodule // module serial
 // Module Name: Controller FSM
 // Description: Issue relevent control signals for each debug function
 /////////////////////////////////////////////////////////////////////////////////
+
 module controller_fsm(
     // INPUTS
         input clk,
