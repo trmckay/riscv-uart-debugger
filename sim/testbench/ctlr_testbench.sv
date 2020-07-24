@@ -110,7 +110,7 @@ module ctrlr_testbench();
     logic pause, reset, resume, out_valid, ctrlr_busy, rf_rd, rf_wr, mem_rd, mem_wr;
     logic [31:0] d_rd;
     
-    controller CTRLR_UT(.*);
+    controller_fsm CTRLR_UT(.*);
     mcu_stub MCU(.*);
     
     always begin
@@ -120,44 +120,44 @@ module ctrlr_testbench();
 
     // send debug_fn to controller attached to mcu stub
     initial begin
-        debug_fn = NONE;
+        debug_fn = FN_NONE;
         addr = 'Z;
         d_in = 'Z;
         valid = 0;
 
         // test pause
         # 20
-        debug_fn = PAUSE;
+        debug_fn = FN_PAUSE;
         # 3
         // signals may not be perfectly syncd
         valid = 1;
         # 20;
-        debug_fn = NONE;
+        debug_fn = FN_NONE;
         valid = 0;
 
         // wait
         # 300
 
         // test add break point
-        debug_fn = BR_PT_ADD;
+        debug_fn = FN_BR_PT_ADD;
         addr = 'h10;
         # 3
         valid = 1;
         # 20
         valid = 0;
         addr = 'Z;
-        debug_fn = NONE;
+        debug_fn = FN_NONE;
         
         // wait
         # 40
 
         // test resume
-        debug_fn = RESUME;
+        debug_fn = FN_RESUME;
         # 3
         valid = 1;
         # 20
         valid = 0;
-        debug_fn = NONE;
+        debug_fn = FN_NONE;
     end
 
 endmodule

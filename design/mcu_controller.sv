@@ -44,6 +44,7 @@ typedef enum logic [3:0] {
     FN_REG_WR      = 4'hD
 } DEBUG_FN;
 
+
 /////////////////////////////////////////////////////////////////////////////////
 // Module Name: Controller Wrapper
 // Description: Link the serial decoder and controller FSM 
@@ -121,6 +122,18 @@ endmodule // module mcu_controller
 /////////////////////////////////////////////////////////////////////////////////
 // Module Name: Serial Decoder
 // Description: Decode incoming UART commands and encode responses
+//
+// Serial connection overview
+// 
+// Host: Personal computer
+// Target: Controller/mcu
+//
+// - host establishes connection
+// - send first byte containing command (listed in enum below)
+// - if arguments are necessary send additional bytes (target will not acknowledge)
+// - once transmission is complete, wait for response from target
+// - target will respond with a non-zero byte to indicate success
+// - then, if data was requested, target will respond with 4 additional bytes
 /////////////////////////////////////////////////////////////////////////////////
 
 module serial(
@@ -284,17 +297,19 @@ module serial(
 
             S_REPLY_SE: begin
                 r_tx_valid <= 0;
-                if (l_tx_done) begin
+                if (!l_tx_done) begin
                     r_ps <= S_REPLY_SE;
                 end
                 // send first byte of word
-                else begin
+                else if (r_debug_fn > 'h4 && r_debug_fn < 'h9) begin
                     r_ps <= S_REPLY_DATA;
                     r_send_byte <= r_d_rd[7:0];
                     r_d_rd <= r_d_rd >> 8;
                     r_tx_valid <= 1;
                     r_index <= 1;
                 end
+                else
+                    r_ps <= S_IDLE;
             end // S_REPLY_SE
 
             S_REPLY_DATA: begin
@@ -328,7 +343,7 @@ module serial(
 
     uart_tx transmitter(
         .i_Clock(clk),
-        .i_Tx_DV(l_tx_valid),
+        .i_Tx_DV(r_tx_valid),
         .i_Tx_Byte(r_send_byte),
 
         .o_Tx_Active(l_tx_active),
