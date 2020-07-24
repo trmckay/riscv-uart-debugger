@@ -94,6 +94,13 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
     execution, not the contents of memory. Clearing can be optionally implemented by
     pausing the MCU while writing zeros to the entire memory, only resetting the PC when done.
 
+    \item\textbf{mem\_rw\_byte}\\
+    This signal will be driven high at the same time as \emph{mem\_rd} or \emph{mem\_wr} if only
+    operating on one byte. If it is a write, only the bottom eight bits of \emph{d\_in} should be
+    written to \emph{addr}. If it is a read, the memory should output the desired byte to the
+    bottom eight bits of \emph{d\_rd}.
+
+    \newpage
     \item\textbf{mem\_rd}\\
     The MCU should read the memory at \emph{addr}. The \emph{mcu\_busy} should go
      high at or before the next positive clock edge until the memory read is complete. The
@@ -114,7 +121,6 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
                valid:  _______|¯|_________________________
         \end{verbatim}
 
-    \newpage
     \item\textbf{mem\_wr}\\
     The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy} should go
     high at or before the next positive clock edge until the memory write is complete.
@@ -179,7 +185,6 @@ same time, it may be helpful to set \emph{error} and perhaps even do some error 
 
 \end{enumerate}
 
-\newpage
 \section{Implementation suggestions}
 There is no right or wrong way to implement this protocol, as long as the MCU responds correctly.
 However, there are some ways to make this easier.
