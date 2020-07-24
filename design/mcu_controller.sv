@@ -6,35 +6,42 @@
 // Description: Hardware module to add support for remote debugging, programming,
 // etc. via low-level control of a target MCU.
 // 
-// Revision: 0.11
+// Revision: 0.20
 //
 // Revision  0.01 - File Created
 // Revision  0.10 - Controller first rev.
 // Revision  0.11 - Increase project scope
+// Revision  0.20 - First rev. serial module, byte granularity
 //
 // TODO:
 //   - serial decoder
 //   - MCU integration
 //   - testing
 //   - write documentation
-//
 /////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
 
 typedef enum logic [3:0] {
+    // arguments: 0 bytes
     NONE        = 4'h0,
     PAUSE       = 4'h1,
     RESUME      = 4'h2,
     STEP        = 4'h3,
     RESET       = 4'h4,
-    STATUS      = 4'h5,
-    BR_PT_ADD   = 4'h6,
-    BR_PT_RM    = 4'h7,
-    MEM_RD      = 4'h8,
-    MEM_WR      = 4'h9,
-    REG_RD      = 4'hA,
-    REG_WR      = 4'hB
+    STATUS      = 4'h5, // reply
+
+    // arguments: 4 bytes
+    MEM_RD_BYTE = 4'h6, // reply
+    MEM_RD_WORD = 4'h7, // reply
+    REG_RD      = 4'h8, // reply
+    BR_PT_ADD   = 4'h9,
+    BR_PT_RM    = 4'hA,
+
+    // arguments: 4 bytes + 4 bytes
+    MEM_WR_BYTE = 4'hB, // recieves whole word for simplicity
+    MEM_WR_WORD = 4'hC,
+    REG_WR      = 4'hD
 } DEBUG_FN;
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +75,7 @@ module mcu_controller(
     output valid
 );
 
-    logic l_ctrlr_busy, l_serial_valid, l_send_reply;
+    logic l_ctrlr_busy, l_serial_valid;
     DEBUG_FN l_debug_fn;
     logic [31:0] l_addr;
 
@@ -80,7 +87,7 @@ module mcu_controller(
         .srx(srx),
         .ctrlr_busy(l_ctrlr_busy),
         .d_rd(d_rd),
-        .in_valid(l_send_reply),
+        .error(error),
         
         .stx(stx),
         .debug_fn(l_debug_fn),
@@ -126,8 +133,10 @@ module serial(
 
     // controller -> sdec
         input ctrlr_busy,
+
+    // mcu -> sdec
         input [31:0] d_rd,
-        input in_valid,
+        input error,
 
     // sdec -> controller
         output DEBUG_FN debug_fn,
@@ -136,25 +145,195 @@ module serial(
         output out_valid
 );
 
-    logic [7:0] send_byte, rcv_byte;
-    logic rx_done, tx_done, tx_valid, tx_active;
+    typedef enum logic [2:0] {
+        S_IDLE,
+        S_RCV_ADDR,
+        S_RCV_DATA,
+        S_CTRLR,
+        S_REPLY_SE,
+        S_REPLY_DATA
+    } STATE;
 
-    uart_rx reciever (
+    STATE r_ps = S_IDLE;
+
+    // Debug function is a register because the protocol
+    // designates that this signal will remain steady while
+    // the MCU is busy.
+    reg [3:0] r_debug_fn;
+
+    // Byte to be sent back to the host machine.
+    reg [7:0] r_send_byte;
+
+    // Hold onto data read from MCU
+    reg [31:0] r_d_rd;
+
+    // Byte read by the UART reciever. Only valid when
+    // l_rx_done is high which will only be so
+    // for one clock cycle.
+    logic [7:0] l_rcv_byte;
+    logic l_rx_done;
+
+    // Various signals for UART transmitter. Drive l_tx_valid
+    // when transmission begins. Drive l_tx_done
+    // high when transmission is finished. The transmitter will
+    // set l_tx_active high while transmission is occurring.
+    logic l_tx_done, l_tx_active;
+    reg r_tx_valid = 0;
+    reg [31:0] r_d_in, r_addr;
+
+    // Index for combining multiple bytes into one data.
+    reg [1:0] r_index;
+
+    // Drive r_out_valid high when debug_fn, addr, and d_in have
+    // the necessary data for the desired function.
+    reg r_out_valid = 0;
+
+    // Connect outputs to their respective registers.
+    assign out_valid = r_out_valid;
+    assign d_in = r_d_in;
+    assign addr = r_addr;
+    assign debug_fn = DEBUG_FN'(r_debug_fn);
+
+    always_ff @(posedge clk) begin
+
+        case(r_ps)
+
+            // Wait here before or during recieve phase
+            S_IDLE: begin
+                // UART reciever has a byte
+                if (l_rx_done) begin
+                    
+                    // function is bottom 4 bits of recieved data
+                    r_debug_fn <= l_rcv_byte[3:0];
+
+                    // Check function to see if more data is needed
+                    // Debug functions >5 need at least four more bytes of arguments
+                    // for the address
+                    if (l_rcv_byte[3:0] > 'h5) begin
+                        r_ps <= S_RCV_ADDR;
+                    end
+                    // all other functions can immediately be issued
+                    else begin
+                        r_ps <= S_CTRLR;
+                        r_out_valid <= 1;
+                    end
+                end // if (l_rx_done)
+                else begin
+                    r_ps <= S_IDLE;
+                end
+            end // S_IDLE
+
+            S_RCV_ADDR: begin
+                // if a byte is ready: shift register, then add new byte
+                if (l_rx_done) begin
+                    r_addr <= (r_addr << 8) + l_rcv_byte;
+                    // 4 bytes have been recieved
+                    if (r_index == 3) begin
+                        // functions >A need data as well
+                        if (r_debug_fn > 'hA) begin
+                            r_ps <= S_RCV_DATA;
+                            r_index <= 0;
+                        end
+                        // otherwise, send cmd to controller
+                        else begin
+                            r_ps <= S_CTRLR;
+                            r_out_valid <= 1;
+                        end
+                    end // if (r_index == 3)
+                    else begin
+                        r_index <= r_index + 1;
+                        r_ps <= S_RCV_ADDR;
+                    end
+                end // if (l_rx_done);
+                else
+                    r_ps <= S_RCV_ADDR;
+            end // S_RCV_ADDR
+
+            S_RCV_DATA: begin
+                // if a byte is ready: shift register, then add new byte
+                if (l_rx_done) begin
+                    r_d_in <= (r_d_in << 8) + l_rcv_byte;
+                    // 4 bytes have been recieved
+                    if (r_index == 3) begin
+                        r_ps <= S_CTRLR;
+
+                        r_out_valid <= 1;
+                    end
+                    else begin
+                        r_index <= r_index + 1;
+                        r_ps <= S_RCV_DATA;
+                    end
+                end // if (l_rx_done);
+                else begin
+                    r_ps <= S_RCV_DATA;
+                end
+            end // S_RCV_DATA
+
+            S_CTRLR: begin
+                r_out_valid <= 0;
+                if (ctrlr_busy)
+                    r_ps <= S_CTRLR;
+                else begin 
+                    r_ps <= S_REPLY_SE;
+                    // send 0 for success, 1 for error
+                    r_send_byte <= error;
+                    r_tx_valid <= 1;
+                    r_d_rd <= d_rd;
+                end
+            end // S_CTRLR
+
+            S_REPLY_SE: begin
+                r_tx_valid <= 0;
+                if (l_tx_done) begin
+                    r_ps <= S_REPLY_SE;
+                end
+                // send first byte of word
+                else begin
+                    r_ps <= S_REPLY_DATA;
+                    r_send_byte <= r_d_rd[7:0];
+                    r_d_rd <= r_d_rd >> 8;
+                    r_tx_valid <= 1;
+                    r_index <= 1;
+                end
+            end // S_REPLY_SE
+
+            S_REPLY_DATA: begin
+                if (l_tx_done) begin
+                    if (r_index == 3)
+                        r_ps <= S_IDLE;
+                    else begin
+                        r_index <= r_index + 1;
+                        r_send_byte <= r_d_rd[7:0];
+                        r_d_rd <= r_d_rd >> 8;
+                        r_tx_valid <= 1;
+                        r_ps <= S_REPLY_DATA;
+                    end
+                end
+                else begin
+                    r_tx_valid <= 0;
+                    r_ps <= S_REPLY_DATA;
+                end
+            end // S_REPLY_SE
+
+        endcase // case(r_ps)
+    end // always_ff @(posedge clk)
+
+    uart_rx reciever(
         .i_Clock(clk),
         .i_Rx_Serial(srx),
 
-        .o_Rx_DV(rx_done),
-        .o_Rx_Byte(rcv_byte)
+        .o_Rx_DV(l_rx_done),
+        .o_Rx_Byte(l_rcv_byte)
     );
 
     uart_tx transmitter(
         .i_Clock(clk),
-        .i_Tx_DV(tx_valid),
-        .i_Tx_Byte(send_byte),
+        .i_Tx_DV(l_tx_valid),
+        .i_Tx_Byte(r_send_byte),
 
-        .o_Tx_Active(tx_active),
+        .o_Tx_Active(l_tx_active),
         .o_Tx_Serial(stx),
-        .o_Tx_Done(tx_done)
+        .o_Tx_Done(l_tx_done)
     );
 
 endmodule // module serial
@@ -188,6 +367,7 @@ module controller_fsm(
             output logic mem_rd,
             output logic rf_wr,
             output logic mem_wr,
+            output logic mem_rw_byte,
 
         // controller -> sdec
             output logic ctrlr_busy
@@ -253,6 +433,7 @@ module controller_fsm(
         rf_wr = 0;
         mem_rd = 0;
         mem_wr = 0;
+        mem_rw_byte = 0;
         ns  = IDLE;
 
         /* controller will output no commands and
@@ -299,14 +480,25 @@ module controller_fsm(
                             bp_add = 1;
                             ns = IDLE;
                         end
-                        MEM_RD: begin
+                        MEM_RD_WORD: begin
                             mem_rd = 1;
                             ns = WAIT_MEM_RD;
                         end
-                        MEM_WR: begin
+                        MEM_WR_WORD: begin
                             mem_wr = 1;
                             ns = WAIT_MEM_WR;
                         end
+                        MEM_RD_BYTE: begin
+                            mem_rd = 1;
+                            mem_rw_byte = 1;
+                            ns = WAIT_MEM_RD;
+                        end
+                        MEM_WR_BYTE: begin
+                            mem_wr = 1;
+                            mem_rw_byte = 1;
+                            ns = WAIT_MEM_WR;
+                        end
+
                     endcase // case(debug_fn)
                 end            
                 // no command given, stay idle
