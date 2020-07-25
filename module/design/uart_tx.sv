@@ -22,14 +22,12 @@
 //
 // Set Parameter CLKS_PER_BIT as follows:
 // CLKS_PER_BIT = (Frequency of i_Clock)/(Frequency of UART)
-// Example: 10 MHz Clock, 115200 baud UART
-// (10000000)/(115200) = 87
+// Example: 50 MHz Clock, 115200 baud UART
+// (50E6)/(115200) = 434.028 ~= 434
 //
 //////////////////////////////////////////////////////////////////////
 
-// TODO: overwrite CLKS_PER_BIT
-
-module uart_tx #(parameter CLKS_PER_BIT = 4)(
+module uart_tx #(parameter CLKS_PER_BIT = 434)(
     input        i_Clock,
     input        i_Tx_DV,
     input [7:0]  i_Tx_Byte, 
