@@ -73,6 +73,7 @@ module mcu_controller(
     output reg_wr,
     output mem_rd,
     output mem_wr,
+    output mem_rw_byte,
     output valid
 );
 
@@ -112,6 +113,7 @@ module mcu_controller(
         .rf_wr(rf_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
+        .mem_rw_byte(mem_rw_byte),
         .out_valid(valid),
         .ctrlr_busy(l_ctrlr_busy)
     );
