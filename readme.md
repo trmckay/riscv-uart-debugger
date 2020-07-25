@@ -12,7 +12,15 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 ```
 .
 ├── client
+│   ├── build
+│   │   └── debugger
+│   ├── Makefile
 │   └── src
+│       ├── ctrlr.c
+│       ├── ctrlr.h
+│       ├── debug.c
+│       ├── debug.h
+│       ├── main.c
 │       ├── serial.c
 │       └── serial.h
 ├── doc
@@ -34,4 +42,7 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │           ├── ctrlr_testbench_behav.wcfg
 │           └── serial_testbench_behav.wcfg
 └── readme.md
+
 ```
+
+10 directories, 25 files
