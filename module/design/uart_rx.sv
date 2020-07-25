@@ -30,7 +30,7 @@
 
 // TODO: overwrite CLKS_PER_BIT
 
-module uart_rx #(parameter CLKS_PER_BIT = -1)(
+module uart_rx #(parameter CLKS_PER_BIT = 4)(
     input        i_Clock,
     input        i_Rx_Serial,
 

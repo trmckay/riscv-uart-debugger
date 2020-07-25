@@ -12,9 +12,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="812334fs"></ZoomStartTime>
-      <ZoomEndTime time="3798335fs"></ZoomEndTime>
-      <Cursor1Time time="1310000fs"></Cursor1Time>
+      <ZoomStartTime time="632334fs"></ZoomStartTime>
+      <ZoomEndTime time="3618335fs"></ZoomEndTime>
+      <Cursor1Time time="1240334fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="174"></NameColumnWidth>
@@ -35,21 +35,23 @@
       <obj_property name="ObjectShortName">r_ps[2:0]</obj_property>
       <obj_property name="label">serial state</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/serial_testbench/debug_fn">
+   <wvobject type="group" fp_name="group55">
+      <obj_property name="label">srx</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">debug_fn[3:0]</obj_property>
-      <obj_property name="ObjectShortName">debug_fn[3:0]</obj_property>
-      <obj_property name="label">debug_fn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/serial_testbench/out_valid">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">out_valid</obj_property>
-      <obj_property name="ObjectShortName">out_valid</obj_property>
-      <obj_property name="label">valid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/serial_testbench/ctrlr_busy">
-      <obj_property name="ElementShortName">ctrlr_busy</obj_property>
-      <obj_property name="ObjectShortName">ctrlr_busy</obj_property>
+      <wvobject type="logic" fp_name="/serial_testbench/srx">
+         <obj_property name="ElementShortName">srx</obj_property>
+         <obj_property name="ObjectShortName">srx</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/serial_testbench/sdec_UT/l_rx_done">
+         <obj_property name="ElementShortName">l_rx_done</obj_property>
+         <obj_property name="ObjectShortName">l_rx_done</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/serial_testbench/sdec_UT/l_rcv_byte">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">l_rcv_byte[7:0]</obj_property>
+         <obj_property name="ObjectShortName">l_rcv_byte[7:0]</obj_property>
+         <obj_property name="label">l_rcv_byte</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject type="group" fp_name="group54">
       <obj_property name="label">stx</obj_property>
@@ -77,22 +79,20 @@
          <obj_property name="ObjectShortName">stx</obj_property>
       </wvobject>
    </wvobject>
-   <wvobject type="group" fp_name="group55">
-      <obj_property name="label">srx</obj_property>
+   <wvobject type="array" fp_name="/serial_testbench/debug_fn">
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject type="logic" fp_name="/serial_testbench/srx">
-         <obj_property name="ElementShortName">srx</obj_property>
-         <obj_property name="ObjectShortName">srx</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/serial_testbench/sdec_UT/l_rx_done">
-         <obj_property name="ElementShortName">l_rx_done</obj_property>
-         <obj_property name="ObjectShortName">l_rx_done</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/serial_testbench/sdec_UT/l_rcv_byte">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">l_rcv_byte[7:0]</obj_property>
-         <obj_property name="ObjectShortName">l_rcv_byte[7:0]</obj_property>
-         <obj_property name="label">l_rcv_byte</obj_property>
-      </wvobject>
+      <obj_property name="ElementShortName">debug_fn[3:0]</obj_property>
+      <obj_property name="ObjectShortName">debug_fn[3:0]</obj_property>
+      <obj_property name="label">debug_fn</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/serial_testbench/out_valid">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">out_valid</obj_property>
+      <obj_property name="ObjectShortName">out_valid</obj_property>
+      <obj_property name="label">valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/serial_testbench/ctrlr_busy">
+      <obj_property name="ElementShortName">ctrlr_busy</obj_property>
+      <obj_property name="ObjectShortName">ctrlr_busy</obj_property>
    </wvobject>
 </wave_config>

@@ -29,7 +29,7 @@
 
 // TODO: overwrite CLKS_PER_BIT
 
-module uart_tx #(parameter CLKS_PER_BIT = -1)(
+module uart_tx #(parameter CLKS_PER_BIT = 4)(
     input        i_Clock,
     input        i_Tx_DV,
     input [7:0]  i_Tx_Byte, 
