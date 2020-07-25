@@ -10,7 +10,6 @@
 
 #include "serial.h"
 
-
 /* open_serial
  *
  * DESCRIPTION
@@ -89,12 +88,11 @@ void open_serial(char *path, int *serial_port)
  * int serial_port: FD of the serial port.
  * volatile sig_atomic_t ctrlc: ctrlC signal.
  */
-void send_byte(byte_t byte_send, int serial_port, volatile sig_atomic_t ctrlc)
+void send_byte(byte_t byte_send, int serial_port)
 {
     ssize_t wc;
     byte_send = htonl(byte_send);
     wc = write(serial_port, &byte_send, BYTES_PER_SEND);
-    if (ctrlc) exit(EXIT_FAILURE);
     if (wc == ERR) {
         perror("ERROR: write(serial)");
         exit(EXIT_FAILURE);
@@ -118,13 +116,12 @@ void send_byte(byte_t byte_send, int serial_port, volatile sig_atomic_t ctrlc)
  * int serial_port: FD of the serial port.
  * volatile sig_atomic_t ctrlc: ctrlC signal.
  */
-byte_t rcv_byte(int serial_port, volatile sig_atomic_t ctrlc)
+byte_t rcv_byte(int serial_port)
 {
     byte_t byte_rcv;
     ssize_t rc;
     byte_rcv = 0;
     rc = read(serial_port, &byte_rcv, BYTES_PER_RCV);
-    if (ctrlc) exit(EXIT_FAILURE);
     if (rc == ERR) {
         perror("ERROR: read(serial)");
         exit(EXIT_FAILURE);
