@@ -1,5 +1,10 @@
+# RISC-V Debugger and Controller #
+
 ### About ###
-General purpose debugger and controller of an MCU via UART over USB.
+Control and debug a RISC-V MCU over USB. Works with any target that correctly implements the protocol and most Linux hosts.
+
+### Detailed implementation and protocol documentation ###
+Documentation source be found [here](https://github.com/trmckay/pipeline-debugger/tree/master/doc). Build with pdflatex or your choice of LaTeX compiler. Prebuilt PDFs can also be found in the releases.
 
 ### Project Structure ###
 ```
