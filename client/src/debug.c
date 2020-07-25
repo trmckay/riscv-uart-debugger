@@ -1,35 +1,46 @@
 #include "debug.h"
 
-int match_strs(char *s, int n, ...)
-{
-    va_list valist;
-    va_start(valist, n);
+#define match_strs(s, m1, m2) ((strcasecmp(s, m1) == 0) || (strcasecmp(s, m2) == 0))
 
-    for (int i = 0; i < n; i++)
-        if (strcasecmp(s, (char *)va_arg(valist, char *)) == 1)
-            return 1;
-    return 0;
+void debug_cmd(char *line, int serial_port)
+{
+    if (match_strs(line, "p", "pause"))
+        mcu_pause(serial_port);
+    if (match_strs(line, "r", "resume"))
+        mcu_resume(serial_port);
 }
 
-void parse_line(char *line)
+void debug_cli(int *serial_port, int *connected)
 {
-    if (match_strs(line, 2, "h", "help"))
-        printf(HELP_MSG);
-    if (match_strs(line, 2, "q", "quit"))
-        exit(EXIT_SUCCESS);   
-}
+    char *line;
 
-void debug_cli(int serial_port)
-{
     while(1)
     {
-        char *line = readline(">| ");
+        // prompt
+        line = readline("\n$ ");
+
         if (!line)
             exit(EXIT_FAILURE);
+
         if (*line)
         {
             add_history(line);
-            parse_line(line);
+
+            // check for help or quit
+            if (match_strs(line, "h", "help"))
+                printf(HELP_MSG);
+            else if (match_strs(line, "q", "quit"))
+                exit(EXIT_SUCCESS);
+            else if (match_strs(line, "c", "connect"))
+            {
+                line = readline("Enter path: ");
+                *connected = !(open_serial(line, serial_port) != 0);
+            }
+
+            if (!(*connected))
+                fprintf(stderr, "Connect to a target first.\n");
+            else
+                debug_cmd(line, *serial_port);
         }
         free(line);
     }

@@ -9,3 +9,7 @@ int mcu_pause(int serial_port)
         fprintf(stderr, "ERROR: MCU reported non-zero code.");
     return br;
 }
+
+void mcu_resume(int serial_port)
+{
+}

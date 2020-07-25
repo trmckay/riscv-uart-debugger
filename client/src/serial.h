@@ -36,7 +36,7 @@ typedef struct termios term_sa;
 #define BYTES_PER_SEND 1
 #define BYTES_PER_RCV 1
 
-void open_serial(char *path, int *serial_port);
+int open_serial(char *path, int *serial_port);
 void send_byte(byte_t byte, int serial_port);
 byte_t rcv_byte(int serial_port);
 

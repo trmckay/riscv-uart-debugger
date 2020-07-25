@@ -9,9 +9,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <stdarg.h>
+#include "serial.h"
+#include "ctrlr.h"
 
 #define HELP_MSG "This help message is a placeholder.\n"
 
-void debug_cli(int serial_port);
+void debug_cli(int *serial_port, int *connected);
 
 #endif

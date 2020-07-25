@@ -25,17 +25,9 @@
  * int *serial_port: pointer to an integer which should be allocated in
  *     the main stack frame or dynamically
  */
-void open_serial(char *path, int *serial_port)
+int open_serial(char *path, int *serial_port)
 {
     term_sa saved_attributes;
-
-    void exit_handler(void) {
-        printf("Restoring serial port settings...");
-        tcsetattr(*serial_port, TCSANOW, &saved_attributes);
-        printf("closing port...");
-        close(*serial_port);
-        printf("closed!\n");
-    }
 
     struct termios tattr;
 
@@ -43,19 +35,18 @@ void open_serial(char *path, int *serial_port)
 
     if ((*serial_port = open(path, O_RDWR)) == -1) {
         fprintf(stderr, "ERROR: open(%s): %s\n", path, strerror(errno));
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     /* Make sure the port is a terminal. */
     if (!isatty(*serial_port)) {
         fprintf(stderr, "ERROR: File is not a terminal.\n");
-        exit(EXIT_FAILURE);
+        return 2;
     }
 
     /* Save the terminal attributes so we can restore them later. */
     printf("Reading terminal attributes and saving for restore.\n");
     tcgetattr(*serial_port, &saved_attributes);
-    atexit(exit_handler);
 
     // Set the funny terminal modes.
     tcgetattr(*serial_port, &tattr);
@@ -72,8 +63,9 @@ void open_serial(char *path, int *serial_port)
     tcsetattr(*serial_port, TCSAFLUSH, &tattr);
 
     printf("Ready to communicate with:\n");
-    printf("    Port: %s\n", path);
+    printf("    Device: %s\n", path);
     printf("    Baud: %s\n", BAUDS);
+    return 0;
 }
 
 
