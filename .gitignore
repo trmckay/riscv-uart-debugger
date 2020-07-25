@@ -13,3 +13,4 @@ od/app/bin
 *.log
 *.out
 *.toc
+client/build
