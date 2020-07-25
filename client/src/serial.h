@@ -16,8 +16,19 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#define TIMEOUT_MSEC 5000
-#define EQUAL 0
-
 typedef unsigned char byte_t;
 typedef struct termios term_sa;
+
+#define EQUAL 0
+#define ERR -1
+#define CTRLC 0
+
+// Serial parameters
+// Make sure these agree with the target
+#define TIMEOUT_MSEC 5000
+#define BAUD B9600
+#define BAUDS "9600"
+#define INTER_BYTE_TIMEOUT 20
+#define MIN_BYTES 1
+#define BYTES_PER_SEND 1
+#define BYTES_PER_RCV 1
