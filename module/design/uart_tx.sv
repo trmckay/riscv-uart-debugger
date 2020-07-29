@@ -27,7 +27,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-module uart_tx #(parameter CLKS_PER_BIT = 434)(
+module uart_tx (
     input        i_Clock,
     input        i_Tx_DV,
     input [7:0]  i_Tx_Byte, 
@@ -35,7 +35,10 @@ module uart_tx #(parameter CLKS_PER_BIT = 434)(
     output logic o_Tx_Serial,
     output       o_Tx_Done
 );
-  
+
+    localparam BAUD = 9600;
+    localparam CLK_RATE = 50000000;
+    localparam int CLKS_PER_BIT = (CLK_RATE)/(BAUD);
     localparam CNT_SIZE = $clog2(CLKS_PER_BIT);  // can count up to CLKS_PER_BIT-1
      
     localparam s_IDLE         = 3'b000;

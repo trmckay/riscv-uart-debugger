@@ -1,6 +1,6 @@
 CC = gcc
 BUILD = build
-CFLAGS = -Wall -L/usr/include -lreadline
+CFLAGS = -Wall -L/usr/include -lreadline -D VERBOSE
 TARGET = $(BUILD)/rvdb
 
 all:

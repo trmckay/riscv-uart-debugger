@@ -1,11 +1,11 @@
 
 module serial_hw_testbench(
-    input clk,
-    input [7:0] sw,
+    input clk_100MHz,
+    input [15:0] sw,
     input srx,
     output [7:0] ca,
     output [3:0] an,
-    output [8:0] leds,
+    output [15:0] led,
     output stx
 );
 
@@ -15,11 +15,14 @@ module serial_hw_testbench(
           mem_rd, mem_wr, mem_rw_byte,
           valid;
 
+    logic clk;
     logic error, mcu_busy;
     logic [31:0] pc, d_rd;
-
+    
     reg [31:0] counter = 0;
     reg [2:0] last_cmd = 0;
+    
+    clk_wiz clk_50MHz(.clk_in(clk_100MHz), .clk_out(clk));
 
     mcu_controller controller(.*);
     sseg_disp sseg(
@@ -30,9 +33,9 @@ module serial_hw_testbench(
         .ANODES(an)
     );
     
-    assign d_rd = {sw, sw, sw, sw};
+    assign d_rd = {sw, sw};
     assign mcu_busy = (counter > 0);
-    assign leds = {7'b0, mcu_busy};
+    assign led = {15'b0, mcu_busy};
     
     always_ff @(posedge clk) begin
         if ((reg_rd || reg_wr || mem_rd || mem_wr || pause) && valid)

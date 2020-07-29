@@ -28,7 +28,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-module uart_rx #(parameter CLKS_PER_BIT = 434)(
+module uart_rx (
     input        i_Clock,
     input        i_Rx_Serial,
 
@@ -36,6 +36,9 @@ module uart_rx #(parameter CLKS_PER_BIT = 434)(
     output [7:0] o_Rx_Byte
 );
 
+    localparam BAUD = 9600;
+    localparam CLK_RATE = 50000000;
+    localparam int CLKS_PER_BIT = (CLK_RATE)/(BAUD);
     localparam CNT_SIZE = $clog2(CLKS_PER_BIT);  // can count up to CLKS_PER_BIT-1
     
     // states for fsm

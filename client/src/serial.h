@@ -29,8 +29,8 @@ typedef struct termios term_sa;
 // Serial parameters
 // Make sure these agree with the target
 #define TIMEOUT_MSEC 5000
-#define BAUD B115200
-#define BAUDS "115200"
+#define BAUD B9600
+#define BAUDS "9600"
 #define INTER_BYTE_TIMEOUT 20
 #define MIN_BYTES 1
 #define BYTES_PER_SEND 1

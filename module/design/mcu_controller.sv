@@ -165,7 +165,7 @@ module serial(
         S_RCV_ADDR,
         S_RCV_DATA,
         S_CTRLR,
-        S_REPLY_SE,
+        S_ECHO,
         S_REPLY_DATA
     } STATE;
 
@@ -289,18 +289,18 @@ module serial(
                 if (ctrlr_busy)
                     r_ps <= S_CTRLR;
                 else begin 
-                    r_ps <= S_REPLY_SE;
+                    r_ps <= S_ECHO;
                     // send 0 for success, 1 for error
-                    r_send_byte <= error;
+                    r_send_byte <= debug_fn;
                     r_tx_valid <= 1;
                     r_d_rd <= d_rd;
                 end
             end // S_CTRLR
 
-            S_REPLY_SE: begin
+            S_ECHO: begin
                 r_tx_valid <= 0;
                 if (!l_tx_done) begin
-                    r_ps <= S_REPLY_SE;
+                    r_ps <= S_ECHO;
                 end
                 // send first byte of word
                 else if (r_debug_fn > 'h4 && r_debug_fn < 'h9) begin
@@ -312,7 +312,7 @@ module serial(
                 end
                 else
                     r_ps <= S_IDLE;
-            end // S_REPLY_SE
+            end // S_ECHO
 
             S_REPLY_DATA: begin
                 if (l_tx_done) begin
