@@ -1,4 +1,4 @@
-// Raw I/O UART byte transciever
+// Raw I/O UART transciever
 // Updated by Trevor McKay
 //
 // Based on code by Keefe Johnson:
@@ -68,60 +68,85 @@ int open_serial(char *path, int *serial_port)
     return 0;
 }
 
-
-/* send_byte
- * 
- * DESCRIPTION
- * Send a single byte over serial to the target device.
- * Will exit with error if write fails.
- *
- * ARGUMENTS
- * byte_t byte_send: Byte to be sent.
- * int serial_port: FD of the serial port.
- * volatile sig_atomic_t ctrlc: ctrlC signal.
- */
-void send_byte(byte_t byte_send, int serial_port)
+void send_word(int serial_port, uint32_t w)
 {
-    ssize_t wc;
-    byte_send = htonl(byte_send);
-    wc = write(serial_port, &byte_send, BYTES_PER_SEND);
-    if (wc == ERR) {
-        perror("ERROR: write(serial)");
+    ssize_t bw;
+    w = htonl(w);
+    bw = write(serial_port, &w, 4);
+    if (bw == -1)
+    {
+        perror("write(serial)");
         exit(EXIT_FAILURE);
     }
-    if (wc != 1) {
-        fprintf(stderr, "ERROR: Could not write enough bytes.\n");
+    if (bw != 4)
+    {
+        fprintf(stderr, "Wrote only %ld of 4 bytes\n", bw);
         exit(EXIT_FAILURE);
     }
 }
 
-
-/* byte_t rcv_byte
- * DESCRIPTION
- * Recieve a byte over serial from the target device.
- * Will exit with error if read fails.
- *
- * RETURNS
- * byte_t byte_rcv: Byte recieved from the device.
- *
- * ARGUMENTS
- * int serial_port: FD of the serial port.
- * volatile sig_atomic_t ctrlc: ctrlC signal.
- */
-byte_t rcv_byte(int serial_port)
+uint32_t recv_word(int serial_port)
 {
-    byte_t byte_rcv;
-    ssize_t rc;
-    byte_rcv = 0;
-    rc = read(serial_port, &byte_rcv, BYTES_PER_RCV);
-    if (rc == ERR) {
-        perror("ERROR: read(serial)");
+    uint32_t w;
+    ssize_t br;
+    w = 0;
+    br = read(serial_port, &w, 4);
+    if (br == -1)
+    {
+        perror("read(serial)");
         exit(EXIT_FAILURE);
     }
-    if (rc != 1) {
-        fprintf(stderr, "ERROR: Could not read enough bytes.");
+    if (br != 4)
+    {
+        fprintf(stderr, "Read only %ld of 4 bytes: 0x%08X\n", br, ntohl(w));
         exit(EXIT_FAILURE);
     }
-    // TODO: Do the bits need to be reversed? Probably not; but, worth thinking about.
-    return byte_rcv;
+    return ntohl(w);
+}
+
+int wait_readable(int serial_port, int msec)
+{
+    int r;
+    fd_set set;
+    struct timeval timeout;
+    FD_ZERO(&set);
+    FD_SET(serial_port, &set);
+    timeout.tv_sec = msec / 1000;
+    timeout.tv_usec = (msec % 1000) * 1000;
+    r = select(serial_port + 1, &set, NULL, NULL, &timeout);
+    if (r == -1)
+    {
+        perror("select");
+        exit(EXIT_FAILURE);
+    }
+    return FD_ISSET(serial_port, &set);
+}
+
+void expect_word(int serial_port, uint32_t expect)
+{
+    uint32_t r;
+    if (wait_readable(serial_port, TIMEOUT_MSEC))
+    {
+        if ((r = recv_word(serial_port)) != expect)
+        {
+            fprintf(stderr, "Expected 0x%08X but received 0x%08X\n", expect, r);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else 
+    {
+        fprintf(stderr, "Expected 0x%08X but received nothing\n", expect);
+        exit(EXIT_FAILURE);
+    }
+}
+
+uint32_t expect_any_word(int serial_port)
+{
+    if (wait_readable(serial_port, TIMEOUT_MSEC))
+        return recv_word(serial_port);
+    else
+    {
+        fprintf(stderr, "Expected a word but received nothing\n");
+        exit(EXIT_FAILURE);
+    }
 }

@@ -124,234 +124,31 @@ endmodule // module mcu_controller
 /////////////////////////////////////////////////////////////////////////////////
 // Module Name: Serial Decoder
 // Description: Decode incoming UART commands and encode responses
-//
-// Serial connection overview
-// 
-// Host: Personal computer
-// Target: Controller/mcu
-//
-// - host establishes connection
-// - send first byte containing command (listed in enum below)
-// - if arguments are necessary send additional bytes (target will not acknowledge)
-// - once transmission is complete, wait for response from target
-// - target will respond with a non-zero byte to indicate success
-// - then, if data was requested, target will respond with 4 additional bytes
 /////////////////////////////////////////////////////////////////////////////////
+
+// TODO: rewrite serial driver to support word communication
 
 module serial(
     input clk,
     input reset,
 
     // user <-> serial
-        input srx,
-        output stx,
+    input srx,
+    output stx,
 
     // controller -> sdec
-        input ctrlr_busy,
+    input ctrlr_busy,
 
     // mcu -> sdec
-        input [31:0] d_rd,
-        input error,
+    input [31:0] d_rd,
+    input error,
 
     // sdec -> controller
-        output DEBUG_FN debug_fn,
-        output [31:0] addr,
-        output [31:0] d_in,
-        output out_valid
+    output DEBUG_FN debug_fn,
+    output [31:0] addr,
+    output [31:0] d_in,
+    output out_valid
 );
-
-    typedef enum logic [2:0] {
-        S_IDLE,
-        S_RCV_ADDR,
-        S_RCV_DATA,
-        S_CTRLR,
-        S_ECHO,
-        S_REPLY_DATA
-    } STATE;
-
-    STATE r_ps = S_IDLE;
-
-    // Debug function is a register because the protocol
-    // designates that this signal will remain steady while
-    // the MCU is busy.
-    reg [3:0] r_debug_fn;
-
-    // Byte to be sent back to the host machine.
-    reg [7:0] r_send_byte;
-
-    // Hold onto data read from MCU
-    reg [31:0] r_d_rd;
-
-    // Byte read by the UART reciever. Only valid when
-    // l_rx_done is high which will only be so
-    // for one clock cycle.
-    logic [7:0] l_rcv_byte;
-    logic l_rx_done;
-
-    // Various signals for UART transmitter. Drive l_tx_valid
-    // when transmission begins. Drive l_tx_done
-    // high when transmission is finished. The transmitter will
-    // set l_tx_active high while transmission is occurring.
-    logic l_tx_done, l_tx_active;
-    reg r_tx_valid = 0;
-    reg [31:0] r_d_in, r_addr;
-
-    // Index for combining multiple bytes into one data.
-    reg [1:0] r_index;
-
-    // Drive r_out_valid high when debug_fn, addr, and d_in have
-    // the necessary data for the desired function.
-    reg r_out_valid = 0;
-
-    // Connect outputs to their respective registers.
-    assign out_valid = r_out_valid;
-    assign d_in = r_d_in;
-    assign addr = r_addr;
-    assign debug_fn = DEBUG_FN'(r_debug_fn);
-
-    always_ff @(posedge clk) begin
-
-        case(r_ps)
-
-            // Wait here before or during recieve phase
-            S_IDLE: begin
-                // UART reciever has a byte
-                if (l_rx_done) begin
-                    
-                    // function is bottom 4 bits of recieved data
-                    r_debug_fn <= l_rcv_byte[3:0];
-
-                    // Check function to see if more data is needed
-                    // Debug functions >5 need at least four more bytes of arguments
-                    // for the address
-                    if (l_rcv_byte[3:0] > 'h5) begin
-                        r_ps <= S_RCV_ADDR;
-                    end
-                    // all other functions can immediately be issued
-                    else begin
-                        r_ps <= S_CTRLR;
-                        r_out_valid <= 1;
-                    end
-                end // if (l_rx_done)
-                else begin
-                    r_ps <= S_IDLE;
-                end
-            end // S_IDLE
-
-            S_RCV_ADDR: begin
-                // if a byte is ready: shift register, then add new byte
-                if (l_rx_done) begin
-                    r_addr <= (r_addr << 8) + l_rcv_byte;
-                    // 4 bytes have been recieved
-                    if (r_index == 3) begin
-                        // functions >A need data as well
-                        if (r_debug_fn > 'hA) begin
-                            r_ps <= S_RCV_DATA;
-                            r_index <= 0;
-                        end
-                        // otherwise, send cmd to controller
-                        else begin
-                            r_ps <= S_CTRLR;
-                            r_out_valid <= 1;
-                        end
-                    end // if (r_index == 3)
-                    else begin
-                        r_index <= r_index + 1;
-                        r_ps <= S_RCV_ADDR;
-                    end
-                end // if (l_rx_done);
-                else
-                    r_ps <= S_RCV_ADDR;
-            end // S_RCV_ADDR
-
-            S_RCV_DATA: begin
-                // if a byte is ready: shift register, then add new byte
-                if (l_rx_done) begin
-                    r_d_in <= (r_d_in << 8) + l_rcv_byte;
-                    // 4 bytes have been recieved
-                    if (r_index == 3) begin
-                        r_ps <= S_CTRLR;
-
-                        r_out_valid <= 1;
-                    end
-                    else begin
-                        r_index <= r_index + 1;
-                        r_ps <= S_RCV_DATA;
-                    end
-                end // if (l_rx_done);
-                else begin
-                    r_ps <= S_RCV_DATA;
-                end
-            end // S_RCV_DATA
-
-            S_CTRLR: begin
-                r_out_valid <= 0;
-                if (ctrlr_busy)
-                    r_ps <= S_CTRLR;
-                else begin 
-                    r_ps <= S_ECHO;
-                    // send 0 for success, 1 for error
-                    r_send_byte <= debug_fn;
-                    r_tx_valid <= 1;
-                    r_d_rd <= d_rd;
-                end
-            end // S_CTRLR
-
-            S_ECHO: begin
-                r_tx_valid <= 0;
-                if (!l_tx_done) begin
-                    r_ps <= S_ECHO;
-                end
-                // send first byte of word
-                else if (r_debug_fn > 'h4 && r_debug_fn < 'h9) begin
-                    r_ps <= S_REPLY_DATA;
-                    r_send_byte <= r_d_rd[7:0];
-                    r_d_rd <= r_d_rd >> 8;
-                    r_tx_valid <= 1;
-                    r_index <= 1;
-                end
-                else
-                    r_ps <= S_IDLE;
-            end // S_ECHO
-
-            S_REPLY_DATA: begin
-                if (l_tx_done) begin
-                    if (r_index == 3)
-                        r_ps <= S_IDLE;
-                    else begin
-                        r_index <= r_index + 1;
-                        r_send_byte <= r_d_rd[7:0];
-                        r_d_rd <= r_d_rd >> 8;
-                        r_tx_valid <= 1;
-                        r_ps <= S_REPLY_DATA;
-                    end
-                end
-                else begin
-                    r_tx_valid <= 0;
-                    r_ps <= S_REPLY_DATA;
-                end
-            end // S_REPLY_SE
-
-        endcase // case(r_ps)
-    end // always_ff @(posedge clk)
-
-    uart_rx reciever(
-        .i_Clock(clk),
-        .i_Rx_Serial(srx),
-
-        .o_Rx_DV(l_rx_done),
-        .o_Rx_Byte(l_rcv_byte)
-    );
-
-    uart_tx transmitter(
-        .i_Clock(clk),
-        .i_Tx_DV(r_tx_valid),
-        .i_Tx_Byte(r_send_byte),
-
-        .o_Tx_Active(l_tx_active),
-        .o_Tx_Serial(stx),
-        .o_Tx_Done(l_tx_done)
-    );
 
 endmodule // module serial
 
