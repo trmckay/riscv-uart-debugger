@@ -104,7 +104,7 @@ void start(char *path, int verbose)
         retry(verbose);
 
     // quick connection test
-    if (connection_test(serial_port, 16, 0))
+    if (connection_test(serial_port, 64, 0))
         retry(verbose);
 
     printf("\nA stable connection has been established. Launching debugger...\n");

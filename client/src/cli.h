@@ -20,7 +20,8 @@
 #define CYAN    "\x1b[36m"
 #define RESET   "\x1b[0m"
 
-#define HELP_MSG "Placeholder help message\n"
+#define HELP_MSG \
+"UART Debugger\n"
 
 void debug_cli(char *path, int serial_port, int verbose);
 

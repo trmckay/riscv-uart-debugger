@@ -5,6 +5,7 @@
 #include <time.h>
 #include "serial.h"
 #include "cli.h"
+#include "file_io.h"
 
 #define FN_NONE         0x00
 #define FN_PAUSE        0x01
@@ -24,7 +25,9 @@
 #define word_t uint32_t
 
 int connection_test(int serial_port, int n, int do_log);
+int mcu_program(int serial_port, char *path);
 int mcu_pause(int serial_port);
 int mcu_resume(int serial_port);
+int mcu_write_mem_word(int serial_port, uint32_t addr, uint32_t data);
 
 #endif

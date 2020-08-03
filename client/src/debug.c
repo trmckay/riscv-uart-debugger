@@ -109,7 +109,7 @@ int connection_test(int serial_port, int n, int logging)
             misses += 1;
 
         if (do_log)
-            fprintf(log, "[%4d -  cmd]: sent: 0x00000000, recieved: 0x%08X\n", i, r);
+            fprintf(log, "[%d]\nsent: 0x00000000, recieved: 0x%08X\n", i+1, r);
 
         // send random addr
         s = rand();
@@ -127,7 +127,7 @@ int connection_test(int serial_port, int n, int logging)
             misses += 1;
 
         if (do_log)
-            fprintf(log, "[%4d - addr]: sent: 0x%08X, recieved: 0x%08X\n", i, s, r);
+            fprintf(log, "sent: 0x%08X, recieved: 0x%08X\n", s, r);
         
         // send random data
         s = rand();
@@ -145,7 +145,7 @@ int connection_test(int serial_port, int n, int logging)
             misses += 1;
 
         if (do_log)
-            fprintf(log, "[%4d - data]: sent: 0x%08X, recieved: 0x%08X\n\n", i, s, r);
+            fprintf(log, "sent: 0x%08X, recieved: 0x%08X\n\n", s, r);
         
         // wait for final reply
         read_word(serial_port, &r);
@@ -186,3 +186,40 @@ int mcu_resume(int serial_port)
     uint32_t r;
     return send_cmd(serial_port, FN_RESUME, 0, 0, 0, &r);
 }
+
+int mcu_write_mem_word(int serial_port, uint32_t addr, uint32_t data)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_MEM_WR_WORD, addr, data, 2, &r);
+}
+
+int mcu_read_mem_word(int serial_port, uint32_t addr, uint32_t *data)
+{
+    return send_cmd(serial_port, FN_MEM_RD_WORD, addr, 0, 1, data);
+}
+
+int mcu_program(int serial_port, char *path)
+{
+    off_t n;
+    uint32_t w, addr = 0x0;
+    int f;
+
+    if ((f = open_file(path, &n)) == -1)
+    {
+        fprintf(stderr, "Error: could not program with %s\n", path);
+        return 1;
+    }
+    for (int i = 0; i < n; i++)
+    {
+        fprintf(stderr, "Progress: %.1f%%\r", (float)i*100/n);
+        if (read_word_file(f, &w))
+            return 1;
+        if (mcu_write_mem_word(serial_port, addr, w))
+            return 1;
+        addr += 0x4;
+    }
+    printf("\nProgramming successful!\n");
+    return 0;
+}
+
+
