@@ -55,7 +55,10 @@ module mcu_controller(
 
     assign addr = l_addr;
 
-    serial serial(
+    serial_driver #(
+        .BAUD(115200),
+        .CLK_RATE(50)
+    ) serial(
         .clk(clk),
         .reset(1'b0),
         .srx(srx),

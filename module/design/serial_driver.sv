@@ -1,6 +1,11 @@
 `timescale 1ns / 1ps
 
-module serial(
+module serial_driver #(
+    // parameters
+    CLK_RATE = 50,  // input clk speed in MHz
+    BAUD = 115200   // baud rate for UART connections in bit/s
+    )(
+    // INPUTS
     input clk,
     input reset,
 
@@ -15,7 +20,8 @@ module serial(
     input [31:0] d_rd,
     input error,
 
-    // sdec -> controller
+    // OUTPUTS
+    // sdrv -> controller
     output [3:0]  cmd,
     output [31:0] addr,
     output [31:0] d_in,
