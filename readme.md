@@ -14,8 +14,8 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 ├── client
 │   ├── Makefile
 │   └── src
-│       ├── ctrlr.c
-│       ├── ctrlr.h
+│       ├── cli.c
+│       ├── cli.h
 │       ├── debug.c
 │       ├── debug.h
 │       ├── main.c
@@ -48,3 +48,5 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │           └── serial_testbench_behav.wcfg
 └── readme.md
 ```
+
+9 directories, 27 files
