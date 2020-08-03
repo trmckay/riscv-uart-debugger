@@ -13,7 +13,7 @@ module serial_testbench();
     localparam CLOCK_PERIOD_NS = 20;  // 50 MHz
     localparam BIT_PERIOD_NS = 86806; // 11520 baud
     
-    serial sdec_UT(.*);
+    serial_driver sdrv_UT(.*);
 
     // force clock
     always begin
@@ -35,23 +35,6 @@ module serial_testbench();
         #(N*CLOCK_PERIOD_NS);
 
     initial begin
-    
-        `wait_cycles(10);
-        
-        r_send_byte = 8'h0;
-        `send_byte;
-        #200
-        `send_byte;
-        #200
-        `send_byte;
-        #200
-        `send_byte;
-        
-        #30
-        ctrlr_busy = 1;
-        `wait_cycles(10);
-        ctrlr_busy = 0;
-        
     end
 
 endmodule // serial_testbench
