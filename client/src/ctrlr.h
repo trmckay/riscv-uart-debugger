@@ -2,6 +2,7 @@
 #define CTRLR_H
 
 #include <stdint.h>
+#include <time.h>
 #include "serial.h"
 
 #define FN_NONE         0x00
@@ -21,17 +22,18 @@
 
 #define word_t uint32_t
 
-int mcu_pause(int serial_port);
-void mcu_resume(int serial_port);
-void mcu_step(int serial_port);
-void mcu_reset(int serial_port);
-byte_t mcu_mem_rd_byte(int serial_port);
-word_t mcu_mem_rd_word(int serial_port);
-word_t mcu_reg_rd(int serial_port);
-void mcu_br_pt_add(int serial_port, word_t addr);
-void mcu_br_pt_rm(int serial_port, unsigned int num);
-void mcu_mem_wr_byte(int serial_port, word_t addr, byte_t data);
-void mcu_mem_wr_word(int serial_port, word_t addr, word_t data);
-void mcu_reg_wr(int serial_port, word_t addr, word_t data);
+void connection_test(int serial_port, int n);
+int mcu_pause(int serial_port, int verbose);
+void mcu_resume(int serial_port, int verbose);
+void mcu_step(int serial_port, int verbose);
+void mcu_reset(int serial_port, int verbose);
+byte_t mcu_mem_rd_byte(int serial_port, int verbose);
+word_t mcu_mem_rd_word(int serial_port, int verbose);
+word_t mcu_reg_rd(int serial_port, int verbose);
+void mcu_br_pt_add(int serial_port, word_t addr, int verbose);
+void mcu_br_pt_rm(int serial_port, unsigned int num, int verbose);
+void mcu_mem_wr_byte(int serial_port, word_t addr, byte_t data, int verbose);
+void mcu_mem_wr_word(int serial_port, word_t addr, word_t data, int verbose);
+void mcu_reg_wr(int serial_port, word_t addr, word_t data, int verbose);
 
 #endif

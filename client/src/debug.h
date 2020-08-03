@@ -12,8 +12,8 @@
 #include "serial.h"
 #include "ctrlr.h"
 
-#define HELP_MSG "This help message is a placeholder.\n"
+#define HELP_MSG "Placeholder help message\n"
 
-void debug_cli(int *serial_port, int *connected);
+void debug_cli(char *path, int serial_port, int verbose);
 
 #endif
