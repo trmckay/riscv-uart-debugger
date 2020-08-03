@@ -27,7 +27,7 @@ module controller_fsm(
 
     // controller -> sdec
     output logic ctrlr_busy
-    );
+);
     
     // keep track of mcu state
     reg r_mcu_paused = 0;
@@ -180,7 +180,6 @@ module controller_fsm(
             
             S_WAIT_PAUSE: begin
                 if (mcu_busy) begin
-                    out_valid = 1;
                     pause = 1;
                     l_ns = S_WAIT_PAUSE;
                 end
@@ -194,7 +193,6 @@ module controller_fsm(
             S_WAIT_RESUME: begin
                 if (mcu_busy) begin
                     resume = 1;
-                    out_valid = 1;
                     l_ns = S_WAIT_RESUME;
                 end
                 else begin
@@ -220,7 +218,6 @@ module controller_fsm(
 
             S_WAIT_MEM_RD: begin
                 if (mcu_busy) begin
-                    out_valid = 1;
                     mem_rd = 1;
                     l_ns = S_WAIT_MEM_RD;
                 end
@@ -232,7 +229,6 @@ module controller_fsm(
 
             S_WAIT_MEM_WR: begin
                 if (mcu_busy) begin
-                    out_valid = 1;
                     mem_wr = 1;
                     l_ns = S_WAIT_MEM_RD;
                 end
@@ -244,7 +240,6 @@ module controller_fsm(
 
             S_WAIT_REG_RD: begin
                 if (mcu_busy) begin
-                    out_valid = 1;
                     rf_rd = 1;
                     l_ns = S_WAIT_REG_RD;
                 end
@@ -256,7 +251,6 @@ module controller_fsm(
 
             S_WAIT_REG_WR: begin
                 if (mcu_busy) begin
-                    out_valid = 1;
                     rf_wr = 1;
                     l_ns = S_WAIT_REG_WR;
                 end

@@ -169,9 +169,9 @@ module serial_driver #(
             end // S_ECHO_DATA
 
             S_CTRLR: begin
-                if (!ctrlr_busy) begin
+                r_out_valid <= 0;
+                if (!ctrlr_busy && !r_out_valid) begin
                     // stop issue
-                    r_out_valid <= 0;
                     r_ps <= S_REPLY;
                     // start reply
                     r_tx_word <= d_rd;
