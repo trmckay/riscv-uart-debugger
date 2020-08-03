@@ -12,8 +12,6 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 ```
 .
 ├── client
-│   ├── build
-│   │   └── debugger
 │   ├── Makefile
 │   └── src
 │       ├── ctrlr.c
@@ -30,19 +28,23 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │   └── protocol.tex
 ├── module
 │   ├── design
+│   │   ├── controller_fsm.sv
 │   │   ├── mcu_controller.sv
+│   │   ├── serial_driver.sv
 │   │   ├── uart_rx.sv
-│   │   └── uart_tx.sv
-│   └── sim
-│       ├── testbench
-│       │   ├── ctlr_testbench.sv
-│       │   ├── db_testbench.sv
-│       │   └── serial_testbench.sv
+│   │   ├── uart_rx_word.sv
+│   │   ├── uart_tx.sv
+│   │   └── uart_tx_word.sv
+│   └── testbench
+│       ├── constraints
+│       │   └── serial_board_testbench.xdc
+│       ├── ctlr_testbench.sv
+│       ├── db_testbench.sv
+│       ├── serial_board_testbench.sv
+│       ├── serial_testbench.sv
+│       ├── sseg.sv
 │       └── wcfg
 │           ├── ctrlr_testbench_behav.wcfg
 │           └── serial_testbench_behav.wcfg
 └── readme.md
-
 ```
-
-10 directories, 25 files
