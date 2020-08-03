@@ -35,9 +35,8 @@ typedef struct termios term_sa;
 #define BYTES_PER_SEND 4
 #define BYTES_PER_RCV 4
 
-int open_serial(char *path, int *serial_port, int verbose);
-void send_word(int serial_port, uint32_t w, int verbose);
-int expect_word(int serial_port, uint32_t w, int verbose);
-uint32_t expect_any_word(int serial_port, int verbose);
+int open_serial(char *path, int *serial_port);
+int send_word(int serial_port, uint32_t w);
+int read_word(int serial_port, uint32_t *w);
 
 #endif

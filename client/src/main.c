@@ -1,10 +1,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "debug.h"
+#include "cli.h"
 #include "serial.h"
 
 #define VERSION "v0.1"
+
+void usage(char *msg);
+void parse_args(int argc, char *argv[], char **path, int *verbose);
+void start(char *path, int verbose);
+
+int main(int argc, char *argv[])
+{
+    int verbose = 0;
+    char *term_path;
+
+    parse_args(argc, argv, &term_path, &verbose);
+    start(term_path, verbose);
+}
 
 void usage(char *msg)
 {
@@ -42,59 +55,63 @@ void parse_args(int argc, char *argv[], char **path, int *verbose)
     }
 }
 
-void start(char *path, int verbose)
+void retry(int verbose)
 {
-    int serial_port = -1;
     char new_path[256];
     
-    if (open_serial(path, &serial_port, verbose))
+    //print some information about possible connection candidates
+    fprintf(stderr, "Error: did not establish a connection.\n\n");
+    fprintf(stderr, "Searcing connected devices for terminals that may be serial connections...\n");
+    fprintf(stderr, "Possible candidates:\n");
+    // exec unix find to search for devices matching common patterns
+    system("find /dev -name \"ttyUSB*\" -o -name \"ttyS*\" | sed 's/^/    /' > /dev/stderr");
+    fprintf(stderr, "\nOn Debian/Ubuntu, the serial connection of FPGA is likely /dev/ttySX. On other distros, try /dev/ttyUSBX.\n\n");
+    
+    // prompt to try a new device
+    char *line = readline("Try again with one of these devices? [y/N]: ");
+    if (line[0] == 'y' || line[0] == 'Y')
     {
-        //print some information about possible connection candidates
-        fprintf(stderr, "Error: failed to open serial connection\n\n");
-        fprintf(stderr, "Searcing connected devices for terminals that may be serial connections...\n");
-        fprintf(stderr, "Possible candidates:\n");
-        // exec unix find to search for devices matching common patterns
-        system("find /dev -name \"ttyUSB*\" -o -name \"ttyS*\" | sed 's/^/    /' > /dev/stderr");
-        fprintf(stderr, "\nOn Debian/Ubuntu, the serial connection of FPGA is likely /dev/ttySX. On Arch/Manjaro, it is likely /dev/ttyUSBX. Other distros/OSs remain untested.\n\n");
-        
-        // prompt to try a new device
-        char *line = readline("Try again with one of these devices? [y/N]: ");
-        if (line[0] == 'y' || line[0] == 'Y')
+        // if user wants to try again
+        free(line);
+        // prompt for path
+        line = readline("Device: ");
+        if (strlen(line) > 255)
         {
-            // if user wants to try again
-            free(line);
-            // prompt for path
-            line = readline("Device: ");
-            if (strlen(line) > 255)
-            {
-                fprintf(stderr, "Error: path too long\n");
-                free(line);
-                exit(EXIT_FAILURE);
-            }
-            // copy into temp str pointer and free before calling to prevent mem leaks
-            memcpy(new_path, line, strlen(line)+1);
-            free(line);
-            // try again, pass through verbose boolean
-            start(new_path, verbose);
-        }
-        // if not, just clean up and exit
-        else
-        {
+            fprintf(stderr, "Error: path too long\n");
             free(line);
             exit(EXIT_FAILURE);
         }
+        // copy into temp str pointer and free before calling to prevent mem leaks
+        memcpy(new_path, line, strlen(line)+1);
+        free(line);
+        // try again, pass through verbose boolean
+        start(new_path, verbose);
     }
+    // if not, just clean up and exit
+    else
+    {
+        free(line);
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void start(char *path, int verbose)
+{
+    int serial_port = -1;
+    
+    if (open_serial(path, &serial_port))
+        retry(verbose);
+
+    // quick connection test
+    if (connection_test(serial_port, 16, 0))
+        retry(verbose);
+
+    printf("\nA stable connection has been established. Launching debugger...\n");
 
     // launch debug cli on device at serial_port
     debug_cli(path, serial_port, verbose);
 
 }
 
-int main(int argc, char *argv[])
-{
-    int verbose = 0;
-    char *term_path;
 
-    parse_args(argc, argv, &term_path, &verbose);
-    start(term_path, verbose);
-}

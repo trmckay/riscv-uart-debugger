@@ -9,6 +9,7 @@
 
 
 #include "serial.h"
+#include "cli.h"
 
 /* open_serial
  *
@@ -25,15 +26,17 @@
  * int *serial_port: pointer to an integer which should be allocated in
  *     the main stack frame or dynamically
  */
-int open_serial(char *path, int *serial_port, int verbose)
+int open_serial(char *path, int *serial_port)
 {
     term_sa saved_attributes;
 
     struct termios tattr;
 
-    printf("Opening serial port...");
     if ((*serial_port = open(path, O_RDWR)) == -1) {
         fprintf(stderr, "Error: open(%s): %s\n", path, strerror(errno));
+        fprintf(stderr, "\nFor permission errors, grant read access (potentially hazardous):\n");
+        fprintf(stderr, "    sudo chmod o+rw %s\n", path);
+        fprintf(stderr, "Otherwise, make sure the device is connected.\n\n");
         return 1;
     }
     printf("done!\n");
@@ -64,49 +67,52 @@ int open_serial(char *path, int *serial_port, int verbose)
     tcsetattr(*serial_port, TCSAFLUSH, &tattr);
     printf("done!\n");
 
-    printf("Ready to communicate!\n");
+    printf("Ready to communicate!\n\n");
     return 0;
 }
 
-void send_word(int serial_port, uint32_t w, int verbose)
+int send_word(int serial_port, uint32_t w)
 {
-    if (verbose)
-        printf("Sending 0x%08X...", w);
-
     ssize_t bw;
     w = htonl(w);
+    
     bw = write(serial_port, &w, 4);
+    
     if (bw == -1)
     {
         perror("write(serial)");
-        exit(EXIT_FAILURE);
+        return 1;
     }
     if (bw != 4)
     {
         fprintf(stderr, "Error: wrote only %ld of 4 bytes\n", bw);
-        exit(EXIT_FAILURE);
+        return 1;
     }
-    if (verbose)
-        printf("done!\n");
+    
+    return 0;
 }
 
-uint32_t recv_word(int serial_port)
+int recv_word(int serial_port, uint32_t *word)
 {
     uint32_t w;
     ssize_t br;
     w = 0;
+    
     br = read(serial_port, &w, 4);
+    
     if (br == -1)
     {
-        perror("read(serial)");
-        exit(EXIT_FAILURE);
+        perror("read(serial_port)");
+        return 1;
     }
     if (br != 4)
     {
         fprintf(stderr, "Error: read only %ld of 4 bytes: 0x%08X\n", br, ntohl(w));
-        exit(EXIT_FAILURE);
+        return 1;
     }
-    return ntohl(w);
+    
+    *word = ntohl(w);
+    return 0;
 }
 
 int wait_readable(int serial_port, int msec)
@@ -114,62 +120,31 @@ int wait_readable(int serial_port, int msec)
     int r;
     fd_set set;
     struct timeval timeout;
+
     FD_ZERO(&set);
     FD_SET(serial_port, &set);
     timeout.tv_sec = msec / 1000;
     timeout.tv_usec = (msec % 1000) * 1000;
+
     r = select(serial_port + 1, &set, NULL, NULL, &timeout);
+
     if (r == -1)
     {
         perror("select");
-        exit(EXIT_FAILURE);
+        return 0;
     }
+
     return FD_ISSET(serial_port, &set);
 }
 
-// returns 1 if words match
-int expect_word(int serial_port, uint32_t expect, int verbose)
-{
-    uint32_t r;
-
-    if (verbose)
-        printf("Waiting for a response...");
-
-    if (wait_readable(serial_port, TIMEOUT_MSEC))
-    {
-        if ((r = recv_word(serial_port)) != expect)
-        {
-            fprintf(stderr, "Error: expected 0x%08X but received 0x%08X\n", expect, r);
-            return 0;
-        }
-    }
-    else 
-    {
-        fprintf(stderr, "Error: expected 0x%08X but received nothing\n", expect);
-        return 0;
-    }
-    
-    if (verbose)
-        printf("recieved 0x%08X\n", r);
-
-    return 1;
-}
-
-uint32_t expect_any_word(int serial_port, int verbose)
+int read_word(int serial_port, uint32_t *word)
 {   
-    if (verbose)
-        printf("Waiting for a response...");
-
+    uint32_t r;
     if (wait_readable(serial_port, TIMEOUT_MSEC))
     {   
-        uint32_t r = recv_word(serial_port);
-        if (verbose)
-            printf("recieved 0x%08X\n", r);
-        return r;
+        recv_word(serial_port, &r);
+        *word = r;
+        return 0;
     }
-    else
-    {
-        fprintf(stderr, "Error: expected a word but received nothing\n");
-        exit(EXIT_FAILURE);
-    }
+    return 1;
 }
