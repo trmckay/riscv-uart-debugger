@@ -11,8 +11,8 @@
 
 
 module uart_rx_word #(
-    parameter CLK_RATE = 50,           // rate of clk in MHz
-    parameter BAUD = 9600,             // raw serial rate in bits/s
+    parameter CLK_RATE = -1,           // rate of clk in MHz
+    parameter BAUD = -1,             // raw serial rate in bits/s
     parameter IB_TIMEOUT = 200         // max time between bytes in ms
     )(
     input clk,

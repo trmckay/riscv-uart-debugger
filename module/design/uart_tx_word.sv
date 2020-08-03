@@ -12,8 +12,8 @@
 
 
 module uart_tx_word #(
-    parameter CLK_RATE = 50,  // rate of clk in MHz
-    parameter BAUD = 115200   // raw serial rate in bits/s
+    parameter CLK_RATE = -1,  // rate of clk in MHz
+    parameter BAUD = -1   // raw serial rate in bits/s
     )(
     input clk,
     input rst,
