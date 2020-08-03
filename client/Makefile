@@ -1,7 +1,7 @@
 CC = gcc
 BUILD = build
-CFLAGS = -Wall -L/usr/include -lreadline -D VERBOSE
-TARGET = $(BUILD)/rvdb
+CFLAGS = -Wall -L/usr/include -lreadline -g
+TARGET = $(BUILD)/uart-db
 
 all:
 	@echo "Make sure the readline library is installed."
