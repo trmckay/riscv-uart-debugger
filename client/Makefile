@@ -4,10 +4,6 @@ CFLAGS = -Wall -L/usr/include -lreadline -g
 TARGET = $(BUILD)/uart-db
 
 all:
-	@echo "Make sure the readline library is installed."
-	@echo "(readline-dev on Debian/Ubuntu derivatives, lib32-readline on Arch derivatives)"
-	@echo ""
-
 	mkdir -p build
 	$(CC) src/*.c $(CFLAGS) -o $(TARGET)
 
