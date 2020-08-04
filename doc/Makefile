@@ -8,7 +8,7 @@ all:
 	mkdir -p $(TARGET)
 	mv tex/*.pdf pdf
 clean:
-	(rm *.log; cd tex; rm *.aux *.out *.log)
+	(rm -f *.log; cd tex; rm -f *.aux *.out *.log)
 
 remove:
-	(rm -r pdf *.log; cd tex; rm *.aux *.out *.log)
+	(rm -rf pdf *.log; cd tex; rm -f *.aux *.out *.log)
