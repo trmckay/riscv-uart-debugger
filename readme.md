@@ -1,12 +1,24 @@
 # RISC-V UART Debugger #
 
 ### About ###
-Control and debug a RISC-V MCU over USB. Works with any target that correctly implements the protocol and most Linux hosts.
+Control and debug a RISC-V MCU over USB UART.
 
-Configured by default for a 50 MHz CPU communicating with a baud rate of 115200.
+Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the serial\_driver instantiation in module/design/mcu\_controller.sv.
 
-### Detailed implementation and protocol documentation ###
+### Installation ###
+
+The best way is to build and install from source:
+'''
+git clone git@github.com:trmckay/riscv-uart-debugger.git; cd riscv-uart-debugger; ./install
+'''
+
+You can also use one of the prebuilt releases if this does not work.
+
+### Protocol implementation ###
 Documentation source be found [here](https://github.com/trmckay/pipeline-debugger/tree/master/doc). Build with pdflatex or your choice of LaTeX compiler. Prebuilt PDFs can also be found in the releases.
+
+Implement the protocol as defined in the doc on your MCU. Then, add the proper constraints to
+forward your UART tx/sx connections to the mcu\_controller module.
 
 ### Project Structure ###
 ```
