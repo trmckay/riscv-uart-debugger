@@ -2,6 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Engineer: Keefe Johnson
+// Minor changes by Trevor McKay
 // 
 // Create Date: 03/18/2019 09:21:15 PM
 // Module Name: uart_rx_word

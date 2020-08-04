@@ -99,7 +99,7 @@ void debug_cli(char *path, int serial_port, int verbose)
     char *line;
     int err = 0;
     
-    printf("\nUART Debugger\n");
+    printf("\nUART Debugger | %s\n", VERSION);
     printf("Enter 'h' or 'help' for usage details.\n");
 
     while(1)

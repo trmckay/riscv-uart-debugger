@@ -8,12 +8,13 @@
 // Description: Hardware module to add support for remote debugging, programming,
 // etc. via low-level control of a target MCU.
 // 
-// Revision: 0.20
+// Version: v0.5
 //
 // Revision  0.01 - File Created
 // Revision  0.10 - Controller first rev.
 // Revision  0.11 - Increase project scope
 // Revision  0.20 - First rev. serial module, byte granularity
+// Revision  0.50 - Tentative release
 //
 // TODO:
 //   - serial decoder
