@@ -28,6 +28,16 @@ int connection_test(int serial_port, int n, int do_log);
 int mcu_program(int serial_port, char *path);
 int mcu_pause(int serial_port);
 int mcu_resume(int serial_port);
-int mcu_write_mem_word(int serial_port, uint32_t addr, uint32_t data);
+int mcu_step(int serial_port);
+int mcu_reset(int serial_port);
+int mcu_status(int serial_port, int *status);
+int mcu_mem_read_word(int serial_port, uint32_t addr, uint32_t *data);
+int mcu_mem_read_byte(int serial_port, uint32_t addr, byte_t *data);
+int mcu_reg_read(int serial_port, uint32_t addr, uint32_t *data);
+int mcu_mem_write_word(int serial_port, uint32_t addr, uint32_t data);
+int mcu_mem_write_byte(int serial_port, uint32_t addr, byte_t data);
+int mcu_reg_write(int serial_port, uint32_t addr, uint32_t data);
+int mcu_add_breakpoint(int serial_port, uint32_t addr);
+int mcu_rm_breakpoint(int serial_port, uint32_t index);
 
 #endif

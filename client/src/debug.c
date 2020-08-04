@@ -187,15 +187,82 @@ int mcu_resume(int serial_port)
     return send_cmd(serial_port, FN_RESUME, 0, 0, 0, &r);
 }
 
-int mcu_write_mem_word(int serial_port, uint32_t addr, uint32_t data)
+int mcu_step(int serial_port)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_STEP, 0, 0, 0, &r);
+}
+
+int mcu_reset(int serial_port)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_RESET, 0, 0, 0, &r);
+}
+
+int mcu_status(int serial_port, int *status)
+{
+    uint32_t r;
+    if (send_cmd(serial_port, FN_STATUS, 0, 0, 0, &r))
+        return 1;
+    *status = r;
+    return 0;
+}
+
+int mcu_add_breakpoint(int serial_port, uint32_t addr)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_BR_PT_ADD, addr, 0, 1, &r);
+}
+
+int mcu_rm_breakpoint(int serial_port, uint32_t index)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_BR_PT_RM, index, 0, 1, &r);
+}
+
+int mcu_reg_read(int serial_port, uint32_t addr, uint32_t *data)
+{
+    uint32_t r;
+    if (send_cmd(serial_port, FN_REG_RD, addr, 0, 1, &r))
+        return 1;
+    *data = r;
+    return 0;
+}
+
+int mcu_reg_write(int serial_port, uint32_t addr, uint32_t data)
+{
+    uint32_t r;
+    return send_cmd(serial_port, FN_REG_WR, addr, data, 2, &r);
+}
+
+int mcu_mem_read_byte(int serial_port, uint32_t addr, byte_t *data)
+{
+    uint32_t r;
+    if (send_cmd(serial_port, FN_MEM_WR_BYTE, addr, 0, 1, &r))
+        return 1;
+    *data = r;
+    return 0;
+}
+
+int mcu_mem_write_word(int serial_port, uint32_t addr, uint32_t data)
 {
     uint32_t r;
     return send_cmd(serial_port, FN_MEM_WR_WORD, addr, data, 2, &r);
 }
 
-int mcu_read_mem_word(int serial_port, uint32_t addr, uint32_t *data)
+int mcu_mem_write_byte(int serial_port, uint32_t addr, byte_t data)
 {
-    return send_cmd(serial_port, FN_MEM_RD_WORD, addr, 0, 1, data);
+    uint32_t r;
+    return send_cmd(serial_port, FN_MEM_WR_BYTE, addr, data, 2, &r);
+}
+
+int mcu_mem_read_word(int serial_port, uint32_t addr, uint32_t *data)
+{
+    uint32_t r;
+    if (send_cmd(serial_port, FN_MEM_RD_WORD, addr, 0, 1, &r))
+        return 1;
+    *data = r;
+    return 0;
 }
 
 int mcu_program(int serial_port, char *path)
@@ -214,7 +281,7 @@ int mcu_program(int serial_port, char *path)
         fprintf(stderr, "Progress: %.1f%%\r", (float)i*100/n);
         if (read_word_file(f, &w))
             return 1;
-        if (mcu_write_mem_word(serial_port, addr, w))
+        if (mcu_mem_write_word(serial_port, addr, w))
             return 1;
         addr += 0x4;
     }

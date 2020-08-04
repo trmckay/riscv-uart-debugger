@@ -87,7 +87,7 @@ int parse_cmd(char *line, int serial_port, int verbose)
         }
         a2 = parse_int(s_a2);
         printf("MEM[0x%08X] <- %d (0x%X)\n", a2, a2, a1);
-        return mcu_write_mem_word(serial_port, a2, a1);
+        return mcu_mem_write_word(serial_port, a2, a1);
     }
 
     fprintf(stderr, "Error: command not recognized\n");
