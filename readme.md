@@ -16,8 +16,6 @@ git clone git@github.com:trmckay/riscv-uart-debugger.git; cd riscv-uart-debugger
 ### Updating ###
 If you have previously installed the tool and still have the repository cloned, you can use the update script to install the latest version. If you don't have the repository still, just follow the installation instructions above, it will overwrite any previous versions.
 
-You can also use one of the prebuilt releases if this does not work.
-
 ### Protocol implementation ###
 Documentation source be found [here](https://github.com/trmckay/pipeline-debugger/tree/master/doc). Build with pdflatex or your choice of LaTeX compiler. Prebuilt PDFs can also be found in the releases.
 
