@@ -1,0 +1,17 @@
+#!/bin/bash
+
+function prompt {
+    while true; do
+        read -p "$* [y/n]: " yn
+        case $yn in
+            [Yy]*) return 0 ;;  
+            [Nn]*) return 1 ;;
+        esac
+    done
+}
+
+if [[ $(git fetch) ]]; then
+    prompt "Repository updated. Install changes?" && git pull; ./install
+else
+    echo "Already up to date."
+fi
