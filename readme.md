@@ -10,6 +10,7 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 
 ### Project Structure ###
 ```
+9 directories, 27 files
 .
 ├── client
 │   ├── Makefile
@@ -18,14 +19,19 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │       ├── cli.h
 │       ├── debug.c
 │       ├── debug.h
+│       ├── file_io.c
+│       ├── file_io.h
 │       ├── main.c
 │       ├── serial.c
 │       └── serial.h
 ├── doc
-│   ├── figures
-│   │   ├── pipeline_db.drawio
-│   │   └── pipeline_db.png
-│   └── protocol.tex
+│   ├── Makefile
+│   └── tex
+│       ├── figures
+│       │   ├── pipeline_db.drawio
+│       │   └── pipeline_db.png
+│       └── protocol.tex
+├── Makefile
 ├── module
 │   ├── design
 │   │   ├── controller_fsm.sv
@@ -40,6 +46,7 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │       │   └── serial_board_testbench.xdc
 │       ├── ctlr_testbench.sv
 │       ├── db_testbench.sv
+│       ├── db_wrapper.sv
 │       ├── serial_board_testbench.sv
 │       ├── serial_testbench.sv
 │       ├── sseg.sv
@@ -48,5 +55,3 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 │           └── serial_testbench_behav.wcfg
 └── readme.md
 ```
-
-9 directories, 27 files
