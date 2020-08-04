@@ -34,13 +34,10 @@ module serial_driver #(
     output out_valid
 );
 
-    localparam p_clk_rate = 50;
-    localparam p_baud = 115200;
-
     logic [31:0] l_rx_word;
     logic l_rx_ready;
 
-    uart_rx_word #(.CLK_RATE(p_clk_rate), .BAUD(p_baud)) rx(
+    uart_rx_word #(.CLK_RATE(CLK_RATE), .BAUD(BAUD)) rx(
         .clk(clk),
         .srx(srx),
         .rst(1'b0),
@@ -52,7 +49,7 @@ module serial_driver #(
     reg r_tx_start = 0; // one-shot
     logic l_tx_idle;
 
-    uart_tx_word #(.CLK_RATE(p_clk_rate), .BAUD(p_baud)) tx(
+    uart_tx_word #(.CLK_RATE(CLK_RATE), .BAUD(BAUD)) tx(
         .clk(clk),
         .rst(1'b0),
         .start(r_tx_start),
