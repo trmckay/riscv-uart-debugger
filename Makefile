@@ -1,4 +1,5 @@
 NAME = uart-db
+VERSION = v0.5
 BUILD = $(NAME)-build
 CLIENT = client/build
 DOC = doc/pdf
@@ -31,4 +32,4 @@ clean:
 	rm -rf $(BUILD)
 	(cd client; make clean)
 	(cd doc; make remove)
-	rm -f $(NAME).tar.gz
+	rm -f $(NAME)-$(VERSION).tar.gz
