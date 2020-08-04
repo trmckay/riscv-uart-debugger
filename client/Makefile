@@ -8,8 +8,8 @@ all:
 	$(CC) src/*.c $(CFLAGS) -o $(TARGET)
 
 install:
-	@echo "Installing to $(TARGET). Make sure this is in your PATH."
-	sudo cp $(TARGET) /usr/bin/
+	mkdir -p ${HOME}/.local/bin
+	cp $(TARGET) ${HOME}/.local/bin/
 
 clean:
 	rm -rf $(BUILD)

@@ -6,7 +6,8 @@ DOC = doc/pdf
 MODULE = module/design
 
 all:
-	make nobuild
+	(cd doc; make)
+	(cd client; make)
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/client
 	mkdir -p $(BUILD)/doc
@@ -14,10 +15,10 @@ all:
 	cp $(CLIENT)/* $(BUILD)/client
 	cp $(DOC)/* $(BUILD)/doc
 	cp $(MODULE)/* $(BUILD)/module
+	(cd client; make clean)
+	(cd doc; make remove)
+	@echo -e "\nMake successful!"
 
-nobuild:
-	(cd client; make)
-	(cd doc; make)
 release:
 	make all
 	tar czf $(NAME)-$(VERSION).tar.gz $(BUILD)/*

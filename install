@@ -1,0 +1,51 @@
+#!/bin/bash
+
+function prompt {
+    while true; do
+        read -p "$* [y/n]: " yn
+        case $yn in
+            [Yy]*) return 0 ;;  
+            [Nn]*) return 1 ;;
+        esac
+    done
+}
+
+function install-deps {
+    echo "1) Debian/Ubuntu    2) Arch/Manjaro"
+    read -rsn1 sel
+    if [ "$sel" == 1 ]; then
+        sudo apt install readline-dev
+    elif [ "$sel" == 2 ]; then
+        sudo pacman -S lib32-readline
+    else
+        echo "No new packages installed."
+    fi
+    echo ""
+}
+
+echo "You are about to install the RISC-V UART Debugger."
+echo "Press ctrl+c at any point to abort."
+read -p "Press enter to continue."
+
+prompt "Install dependencies: readline library" && \
+    install-deps
+
+echo "Installing to '$HOME/.local/bin'."
+read -p "Press enter to continue."
+(cd client; make; sudo -E make install)
+
+p=$(echo $PATH)
+if [[ "$HOME/.local/bin" == *"p"* ]]; then
+  echo "Warning: '$HOME/.local/bin' is not in your PATH variable."
+  echo "Add the following line to your .bashrc or any other file sourced by your shell:"
+  echo -e "export PATH=\$PATH:\$HOME/.local/bin"
+fi
+
+prompt "Build documentation (you need pdflatex and a TeX distribution to do this)?" && \
+(cd doc; make) ;\
+cp doc/pdf/* . ;\
+echo -e "\nView documention:" ;\
+ls *.pdf
+
+echo -e "\nHardware module located in 'module/design'. Launch the debugger with the command
+'uart-db'."
