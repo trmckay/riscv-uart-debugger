@@ -1,4 +1,4 @@
-# RISC-V Debugger and Controller #
+# RISC-V UART Debugger #
 
 ### About ###
 Control and debug a RISC-V MCU over USB. Works with any target that correctly implements the protocol and most Linux hosts.
