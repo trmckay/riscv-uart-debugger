@@ -13,6 +13,9 @@ The best way is to build and install from source:
 git clone git@github.com:trmckay/riscv-uart-debugger.git; cd riscv-uart-debugger; ./install; cd ..
 ```
 
+### Updating ###
+If you have previously installed the tool and still have the repository cloned, you can use the update script to install the latest version. If you don't have the repository still, just follow the installation instructions above, it will overwrite any previous versions.
+
 You can also use one of the prebuilt releases if this does not work.
 
 ### Protocol implementation ###
