@@ -4,8 +4,6 @@
 #include "cli.h"
 #include "serial.h"
 
-#define VERSION "v0.1"
-
 void usage(char *msg);
 void parse_args(int argc, char *argv[], char **path, int *verbose);
 void start(char *path, int verbose);
