@@ -17,22 +17,10 @@ int parse_int(char *str) {
         return atoi(str);
 }
 
-int parse_cmd(char *line, int serial_port, int verbose) {
+int parse_cmd(char *line, int serial_port) {
     char *cmd, *s_a1, *s_a2;
     cmd = strtok(line, " ");
     uint32_t a1, a2;
-
-    // help message
-    if (match_strs(cmd, "h", "help")) {
-        printf(HELP_MSG);
-        return 0;
-    }
-
-    // quit/exit
-    if (match_strs(cmd, "q", "quit"))
-        exit(EXIT_SUCCESS);
-    if (match_strs(cmd, "ex", "exit"))
-        exit(EXIT_SUCCESS);
 
     s_a1 = strtok(NULL, " ");
     s_a2 = strtok(NULL, " ");
@@ -83,7 +71,7 @@ int parse_cmd(char *line, int serial_port, int verbose) {
     return 1;
 }
 
-void debug_cli(char *path, int serial_port, int verbose) {
+void debug_cli(char *path, int serial_port) {
     char *line;
     int err = 0;
 
@@ -95,12 +83,27 @@ void debug_cli(char *path, int serial_port, int verbose) {
         printf("\nuart-db @ %s\n", path);
         line = (err) ? readline(RED "$ " RESET) : readline(CYAN "$ " RESET);
 
-        if (!line)
-            exit(EXIT_FAILURE);
+        // help message
+        if (match_strs(line, "h", "help")) {
+            printf(HELP_MSG);
+        }
 
+        // quit/exit
+        if (match_strs(line, "q", "quit")) {
+            free(line);
+            return;
+        }
+        if (match_strs(line, "ex", "exit")) {
+            free(line);
+            return;
+        }
+        if (!line) {
+            free(line);
+            return;
+        }
         if (*line) {
             add_history(line);
-            err = parse_cmd(line, serial_port, verbose);
+            err = parse_cmd(line, serial_port);
         }
         free(line);
     }

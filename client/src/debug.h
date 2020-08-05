@@ -4,7 +4,11 @@
 #include "cli.h"
 #include "file_io.h"
 #include "serial.h"
+#include <dirent.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define FN_NONE 0x00

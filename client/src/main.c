@@ -5,15 +5,15 @@
 #include <string.h>
 
 void usage(char *msg);
-void parse_args(int argc, char *argv[], char **path, int *verbose);
-void start(char *path, int verbose);
+void parse_args(int argc, char *argv[], char **path);
+void start(char *path);
+void autodetect();
 
 int main(int argc, char *argv[]) {
-    int verbose = 0;
     char *term_path;
 
-    parse_args(argc, argv, &term_path, &verbose);
-    start(term_path, verbose);
+    parse_args(argc, argv, &term_path);
+    start(term_path);
 }
 
 void usage(char *msg) {
@@ -23,82 +23,116 @@ void usage(char *msg) {
     exit(EXIT_FAILURE);
 }
 
-void parse_args(int argc, char *argv[], char **path, int *verbose) {
-    if (argc < 2) {
-        usage("Error: too few arguments");
+void retry() {
+    char new_path[256];
+    char *line;
+
+    // prompt for path
+    line = readline("\nEnter device: ");
+    if (strlen(line) > 255) {
+        fprintf(stderr, "Error: path too long\n");
+        free(line);
         exit(EXIT_FAILURE);
     }
-    if (argc > 3) {
+    memcpy(new_path, line, strlen(line) + 1);
+    free(line);
+    start(new_path);
+}
+
+void parse_args(int argc, char *argv[], char **path) {
+
+    if (argc == 1) {
+        printf("Autodetect suitible serial ports in '/dev'? ");
+        char *line = readline("[y/N]: ");
+        if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0) {
+            autodetect();
+            exit(EXIT_SUCCESS);
+        } else {
+            fprintf(stderr, "Not autodetecting\n");
+            retry();
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (argc > 2) {
         usage("Error: too many arguments");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 1; i < argc; i++) {
-        char *c_arg = argv[i];
-        if (c_arg[0] == '-') {
-            if (c_arg[1] == 'v')
-                *verbose = 1;
-            else
-                usage("Error: unrecognized flag");
-        } else if (c_arg[0] != '-')
-            *path = c_arg;
-    }
+    *path = argv[1];
 }
 
-void retry(int verbose) {
-    char new_path[256];
-
-    // print some information about possible connection candidates
-    fprintf(stderr, "Error: did not establish a connection.\n\n");
-    fprintf(stderr, "Searcing connected devices for terminals that may be "
-                    "serial connections...\n");
-    fprintf(stderr, "Possible candidates:\n");
-    // exec unix find to search for devices matching common patterns
-    system("find /dev -name \"ttyUSB*\" -o -name \"ttyS*\" | sed 's/^/    /' > "
-           "/dev/stderr");
-    fprintf(stderr,
-            "\nOn Debian/Ubuntu, the serial connection of FPGA is likely "
-            "/dev/ttySX. On other distros, try /dev/ttyUSBX.\n\n");
-
-    // prompt to try a new device
-    char *line = readline("Try again with one of these devices? [y/N]: ");
-    if (line[0] == 'y' || line[0] == 'Y') {
-        // if user wants to try again
-        free(line);
-        // prompt for path
-        line = readline("Device: ");
-        if (strlen(line) > 255) {
-            fprintf(stderr, "Error: path too long\n");
-            free(line);
-            exit(EXIT_FAILURE);
-        }
-        // copy into temp str pointer and free before calling to prevent mem
-        // leaks
-        memcpy(new_path, line, strlen(line) + 1);
-        free(line);
-        // try again, pass through verbose boolean
-        start(new_path, verbose);
-    }
-    // if not, just clean up and exit
-    else {
-        free(line);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void start(char *path, int verbose) {
+void start(char *path) {
     int serial_port = -1;
 
     if (open_serial(path, &serial_port))
-        retry(verbose);
+        retry();
 
     // quick connection test
     if (connection_test(serial_port, 64, 0))
-        retry(verbose);
+        retry();
 
     printf(
         "\nA stable connection has been established. Launching debugger...\n");
 
     // launch debug cli on device at serial_port
-    debug_cli(path, serial_port, verbose);
+    debug_cli(path, serial_port);
+    restore_term(serial_port);
+}
+
+int starts_with(char *cmp, char *str) {
+    int l = strlen(str);
+    for (int i = 0; i < l; i++) {
+        if (cmp[i] != str[i])
+            return 0;
+    }
+    return 1;
+}
+
+int poll(char *path) {
+    int serial_port;
+
+    if (open_serial(path, &serial_port))
+        return 0;
+    else if (connection_test(serial_port, 16, 0)) {
+        restore_term(serial_port);
+        return 0;
+    }
+    debug_cli(path, serial_port);
+    return 1;
+}
+
+void autodetect() {
+    DIR *dir;
+    struct dirent *ent;
+    char full_path[256] = "/dev/";
+
+    printf("Autodetecting devices...\n");
+    if ((dir = opendir("/dev")) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (starts_with(ent->d_name, "ttyS") ||
+                starts_with(ent->d_name, "ttyUSB")) {
+                printf("\nTrying %s...\n", ent->d_name);
+                strcat(full_path, ent->d_name);
+                if (poll(full_path)) {
+                    return;
+                }
+            }
+            full_path[5] = 0;
+        }
+        closedir(dir);
+    } else
+        perror("");
+    fprintf(
+        stderr,
+        RED "\nError: autodetection failed\n\n" RESET
+        "Note: Often times, devices will be inaccessible without first modifying permissions.\n"
+        "You can grant access yourself with:\n"
+        "\n    sudo chmod o+rw <device>\n\n"
+        "Or, you can run the program as superuser.\n");
+    
+    char *line = readline("\nProceed with a different device? [y/N]: ");
+    if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0)
+        retry();
+    else
+        exit(EXIT_FAILURE);
 }

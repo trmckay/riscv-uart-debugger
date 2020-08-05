@@ -10,6 +10,8 @@
 #include "serial.h"
 #include "cli.h"
 
+term_sa saved_attributes;
+
 /* open_serial
  *
  * DESCRIPTION
@@ -25,6 +27,15 @@
  * int *serial_port: pointer to an integer which should be allocated in
  *     the main stack frame or dynamically
  */
+
+void restore_term(int serial_port) {
+    printf("Restoring serial port settings... ");
+    tcsetattr(serial_port, TCSANOW, &saved_attributes);
+    fprintf(stderr, "closing port... ");
+    close(serial_port);
+    fprintf(stderr, "closed\n");
+}
+
 int open_serial(char *path, int *serial_port) {
     term_sa saved_attributes;
 
@@ -32,21 +43,15 @@ int open_serial(char *path, int *serial_port) {
 
     if ((*serial_port = open(path, O_RDWR)) == -1) {
         fprintf(stderr, "Error: open(%s): %s\n", path, strerror(errno));
-        fprintf(stderr,
-                "\nFor permission errors, grant read access (potentially "
-                "hazardous):\n");
-        fprintf(stderr, "    sudo chmod o+rw %s\n", path);
-        fprintf(stderr, "Otherwise, make sure the device is connected.\n\n");
         return 1;
     }
-    printf("done!\n");
 
     /* Make sure the port is a terminal. */
     if (!isatty(*serial_port)) {
         fprintf(stderr, "Error: file is not a terminal\n");
         return 2;
     }
-
+    
     /* Save the terminal attributes so we can restore them later. */
     printf("Reading terminal attributes and saving for restore...");
     tcgetattr(*serial_port, &saved_attributes);

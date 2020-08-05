@@ -86,11 +86,11 @@ int connection_test(int serial_port, int n, int logging) {
         s = 0;
         if (send_word(serial_port, s)) {
             fprintf(stderr, "Error: failed to send data\n");
-            return 1;
+            return 3;
         }
         if (read_word(serial_port, &r)) {
             fprintf(stderr, "Error: did not recieve a reply\n");
-            return 1;
+            return 2;
         }
         if (r != 0)
             misses += 1;
@@ -103,11 +103,11 @@ int connection_test(int serial_port, int n, int logging) {
         s = rand();
         if (send_word(serial_port, s)) {
             fprintf(stderr, "Error: failed to send data\n");
-            return 1;
+            return 3;
         }
         if (read_word(serial_port, &r)) {
             fprintf(stderr, "Error: did not recieve a reply\n");
-            return 1;
+            return 2;
         }
         if (s != r)
             misses += 1;
@@ -119,11 +119,11 @@ int connection_test(int serial_port, int n, int logging) {
         s = rand();
         if (send_word(serial_port, s)) {
             fprintf(stderr, "Error: failed to send data\n");
-            return 1;
+            return 3;
         }
         if (read_word(serial_port, &r)) {
             fprintf(stderr, "Error: did not recieve a reply\n");
-            return 1;
+            return 2;
         }
         if (s != r)
             misses += 1;
@@ -159,6 +159,11 @@ int connection_test(int serial_port, int n, int logging) {
     } else
         return 0;
 }
+
+
+// looks for suitible terminals in the directory 'parent'
+// and saves path to 'path'
+// returns 0 for success, 1 for no result, 2+ for error
 
 int mcu_pause(int serial_port) {
     uint32_t r;

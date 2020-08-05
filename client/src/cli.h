@@ -24,6 +24,7 @@
 
 #define HELP_MSG "UART Debugger\n"
 
-void debug_cli(char *path, int serial_port, int verbose);
+void restore_term(int serial_port);
+void debug_cli(char *path, int serial_port);
 
 #endif
