@@ -7,7 +7,6 @@
 // Original terminal config code from:
 //     https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html
 
-
 #include "serial.h"
 #include "cli.h"
 
@@ -26,15 +25,16 @@
  * int *serial_port: pointer to an integer which should be allocated in
  *     the main stack frame or dynamically
  */
-int open_serial(char *path, int *serial_port)
-{
+int open_serial(char *path, int *serial_port) {
     term_sa saved_attributes;
 
     struct termios tattr;
 
     if ((*serial_port = open(path, O_RDWR)) == -1) {
         fprintf(stderr, "Error: open(%s): %s\n", path, strerror(errno));
-        fprintf(stderr, "\nFor permission errors, grant read access (potentially hazardous):\n");
+        fprintf(stderr,
+                "\nFor permission errors, grant read access (potentially "
+                "hazardous):\n");
         fprintf(stderr, "    sudo chmod o+rw %s\n", path);
         fprintf(stderr, "Otherwise, make sure the device is connected.\n\n");
         return 1;
@@ -55,15 +55,18 @@ int open_serial(char *path, int *serial_port)
     printf("Flushing transmit buffer and setting raw mode...");
     // Set the funny terminal modes.
     tcgetattr(*serial_port, &tattr);
-    tattr.c_oflag &= ~OPOST;  // raw output
-    tattr.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG | ECHONL | IEXTEN);  // raw input
-    tattr.c_cflag &= ~(CSIZE | PARENB | CSTOPB);  // 8N1 ...
-    tattr.c_cflag |= (CS8 | CLOCAL | CREAD);      // ... and enable without ownership
+    tattr.c_oflag &= ~OPOST; // raw output
+    tattr.c_lflag &=
+        ~(ICANON | ECHO | ECHOE | ISIG | ECHONL | IEXTEN); // raw input
+    tattr.c_cflag &= ~(CSIZE | PARENB | CSTOPB);           // 8N1 ...
+    tattr.c_cflag |= (CS8 | CLOCAL | CREAD); // ... and enable without ownership
     // more raw input, and no software flow control
-    tattr.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF | IXANY);
+    tattr.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR |
+                       ICRNL | IXON | IXOFF | IXANY);
     tattr.c_cc[VMIN] = MIN_BYTES;
-    tattr.c_cc[VTIME] = INTER_BYTE_TIMEOUT;  // allow up to 1.0 secs between bytes received
-    cfsetospeed(&tattr, BAUD);    // set baud rate
+    tattr.c_cc[VTIME] =
+        INTER_BYTE_TIMEOUT;    // allow up to 1.0 secs between bytes received
+    cfsetospeed(&tattr, BAUD); // set baud rate
     tcsetattr(*serial_port, TCSAFLUSH, &tattr);
     printf("done!\n");
 
@@ -71,52 +74,46 @@ int open_serial(char *path, int *serial_port)
     return 0;
 }
 
-int send_word(int serial_port, uint32_t w)
-{
+int send_word(int serial_port, uint32_t w) {
     ssize_t bw;
     w = htonl(w);
-    
+
     bw = write(serial_port, &w, 4);
-    
-    if (bw == -1)
-    {
+
+    if (bw == -1) {
         perror("write(serial)");
         return 1;
     }
-    if (bw != 4)
-    {
+    if (bw != 4) {
         fprintf(stderr, "Error: wrote only %ld of 4 bytes\n", bw);
         return 1;
     }
-    
+
     return 0;
 }
 
-int recv_word(int serial_port, uint32_t *word)
-{
+int recv_word(int serial_port, uint32_t *word) {
     uint32_t w;
     ssize_t br;
     w = 0;
-    
+
     br = read(serial_port, &w, 4);
-    
-    if (br == -1)
-    {
+
+    if (br == -1) {
         perror("read(serial_port)");
         return 1;
     }
-    if (br != 4)
-    {
-        fprintf(stderr, "Error: read only %ld of 4 bytes: 0x%08X\n", br, ntohl(w));
+    if (br != 4) {
+        fprintf(stderr, "Error: read only %ld of 4 bytes: 0x%08X\n", br,
+                ntohl(w));
         return 1;
     }
-    
+
     *word = ntohl(w);
     return 0;
 }
 
-int wait_readable(int serial_port, int msec)
-{
+int wait_readable(int serial_port, int msec) {
     int r;
     fd_set set;
     struct timeval timeout;
@@ -128,8 +125,7 @@ int wait_readable(int serial_port, int msec)
 
     r = select(serial_port + 1, &set, NULL, NULL, &timeout);
 
-    if (r == -1)
-    {
+    if (r == -1) {
         perror("select");
         return 0;
     }
@@ -137,11 +133,9 @@ int wait_readable(int serial_port, int msec)
     return FD_ISSET(serial_port, &set);
 }
 
-int read_word(int serial_port, uint32_t *word)
-{   
+int read_word(int serial_port, uint32_t *word) {
     uint32_t r;
-    if (wait_readable(serial_port, TIMEOUT_MSEC))
-    {   
+    if (wait_readable(serial_port, TIMEOUT_MSEC)) {
         recv_word(serial_port, &r);
         *word = r;
         return 0;
