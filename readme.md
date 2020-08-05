@@ -10,7 +10,9 @@ Configured by default for a 50 MHz CPU communicating with a baud rate of 115200.
 The best way is to build and install from source:
 
 ```
-git clone git@github.com:trmckay/riscv-uart-debugger.git; cd riscv-uart-debugger; ./install; cd ..
+git clone git@github.com:trmckay/riscv-uart-debugger.git
+cd riscv-uart-debugger
+./install
 ```
 
 ### Usage ###
