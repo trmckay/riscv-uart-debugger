@@ -44,7 +44,7 @@ void parse_args(int argc, char *argv[], char **path) {
     if (argc == 1) {
         printf("Autodetect serial ports in '/dev/'? ");
         char *line = readline("[y/N]: ");
-        if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0) {
+        if (strcasecmp(line, "y") == 0) {
             autodetect();
             exit(EXIT_SUCCESS);
         } else {
@@ -132,7 +132,7 @@ void autodetect() {
         "Or, you can run the program as superuser.\n");
     
     char *line = readline("\nProceed with a different device? [y/N]: ");
-    if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0)
+    if (strcasecmp(line, "y") == 0)
         retry();
     else
         exit(EXIT_FAILURE);
