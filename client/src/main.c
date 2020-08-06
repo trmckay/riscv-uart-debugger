@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 void usage(char *msg) {
     if (msg != NULL)
         fprintf(stderr, "%s\n", msg);
-    fprintf(stderr, "Usage: uart-db [-v] <serial port>\n");
+    fprintf(stderr, "Usage: uart-db [serial port]\n");
     exit(EXIT_FAILURE);
 }
 
@@ -42,7 +42,7 @@ void retry() {
 void parse_args(int argc, char *argv[], char **path) {
 
     if (argc == 1) {
-        printf("Autodetect suitible serial ports in '/dev'? ");
+        printf("Autodetect serial ports in '/dev/'? ");
         char *line = readline("[y/N]: ");
         if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0) {
             autodetect();
@@ -98,6 +98,7 @@ int poll(char *path) {
         return 0;
     }
     debug_cli(path, serial_port);
+    restore_term(serial_port);
     return 1;
 }
 

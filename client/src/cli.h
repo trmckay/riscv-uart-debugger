@@ -12,6 +12,7 @@
 #include <string.h>
 #include <strings.h>
 
+#define VERDATE "2020-08-05"
 #define VERSION "v0.5"
 
 #define RED "\x1b[31m"
@@ -21,8 +22,6 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
-
-#define HELP_MSG "UART Debugger\n"
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
