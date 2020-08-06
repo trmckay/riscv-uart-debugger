@@ -13,7 +13,7 @@
 #include <strings.h>
 
 #define VERDATE "2020-08-05"
-#define VERSION "v0.5"
+#define VERSION "v1.0"
 
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
