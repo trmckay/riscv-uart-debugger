@@ -10,7 +10,7 @@ function prompt {
     done
 }
 
-if [[ $(git fetch) ]]; then
+if [[ $(git remote update) ]]; then
     prompt "Repository updated. Install changes?" && \
         git pull; ./install; echo "Don't forget to re-add the updated .sv files!\n"
 else
