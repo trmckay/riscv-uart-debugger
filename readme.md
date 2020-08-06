@@ -32,9 +32,27 @@ Documentation source be found [here](https://github.com/trmckay/pipeline-debugge
 Implement the protocol as defined in the doc on your MCU. Then, add the proper constraints to
 forward your UART tx/sx connections to the mcu\_controller module.
 
+### Building ###
+
+Build all subdirectories
+```
+make
+```
+
+Build a gzipped tarball of all necessary files:
+```
+make release
+```
+
+Build and install client:
+```
+cd client
+make
+sudo make install
+```
+
 ### Project Structure ###
 ```
-9 directories, 27 files
 .
 ├── client
 │   ├── Makefile
@@ -52,9 +70,10 @@ forward your UART tx/sx connections to the mcu\_controller module.
 │   ├── Makefile
 │   └── tex
 │       ├── figures
-│       │   ├── pipeline_db.drawio
-│       │   └── pipeline_db.png
+│       │   ├── blackbox.png
+│       │   └── blackbox.xml
 │       └── protocol.tex
+├── install
 ├── Makefile
 ├── module
 │   ├── design
@@ -67,15 +86,12 @@ forward your UART tx/sx connections to the mcu\_controller module.
 │   │   └── uart_tx_word.sv
 │   └── testbench
 │       ├── constraints
-│       │   └── serial_board_testbench.xdc
-│       ├── ctlr_testbench.sv
-│       ├── db_testbench.sv
+│       │   └── db_wrapper_basys3.xdc
 │       ├── db_wrapper.sv
-│       ├── serial_board_testbench.sv
-│       ├── serial_testbench.sv
-│       ├── sseg.sv
-│       └── wcfg
-│           ├── ctrlr_testbench_behav.wcfg
-│           └── serial_testbench_behav.wcfg
-└── readme.md
+│       └── sseg.sv
+├── open-ports
+├── readme.md
+└── update
+
+9 directories, 29 files
 ```
