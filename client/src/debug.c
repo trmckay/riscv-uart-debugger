@@ -1,5 +1,29 @@
 #include "debug.h"
 
+// DESCRIPTION: Sends a command in the following format to the device.
+//              HOST                 TARGET
+//          command (word) ------------>
+//               <---------------- echo command
+//          address (word) ------------>
+//               <---------------- echo address
+//          data (word) --------------->
+//               <---------------- echo data
+//                              executes command...
+//                               ...    
+//                                    ...
+//                                         ...
+//               <---------------- reply (word)
+//
+// ARGUMENTS:
+//   serial_port: the FD of the device
+//           cmd: word containing the command code (see debug.h)
+//          addr: word address on which the command should be applied
+//          data: word of data that should be written
+//          argc: the number of arguments the command depends on
+//                (i.e pause is zero, write memory is 2)
+//         reply: pointer to a word that will store the read data
+//
+// RETURNS: Non-zero if the command files in the client (i.e. echo incorrect).
 int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
              int argc, uint32_t *reply) {
     uint32_t r;

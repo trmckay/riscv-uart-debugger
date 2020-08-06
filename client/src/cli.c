@@ -3,10 +3,17 @@
 #define match_strs(s, m1, m2)                                                  \
     ((strcasecmp(s, m1) == 0) || (strcasecmp(s, m2) == 0))
 
+// Array of breakpoints (also should be tracked in the module)
+// -1 = none
+// positive int = PC of breakpoint
+// only hardware breakpoints are supported right now
 int64_t bps[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 unsigned int n_bps = 0;
+
+// keeps track of pause state
 int paused = 0;
 
+// parse an int in the form 0xNNN..., 0XNNN... or NNN...
 int parse_int(char *str) {
     char prefix[3];
     memcpy(prefix, str, 2);
@@ -21,6 +28,7 @@ int parse_int(char *str) {
         return atoi(str);
 }
 
+// just print a message
 void unrecognized_cmd(char *line) {
     fprintf(stderr,
             "Error: unrecognized command\n"
@@ -30,6 +38,7 @@ void unrecognized_cmd(char *line) {
             line, line);
 }
 
+// long-form help message
 void help() {
     printf("============================ ABOUT ====================================\n"
            "Version: %s, Date: %s\n",
@@ -58,10 +67,17 @@ void help() {
            " 'mwb <addr> >data>': write a byte to the memory\n");
 }
 
+// DESCRIPTION: takes the command as a string, and applies it to the serial port
+// RETURNS: 0 for success, non-zero for error
+// TODO: this probably needs to be split by command in the future
+//   or it will quickly grow too large to maintain
 int parse_cmd(char *line, int serial_port) {
     char *cmd, *s_a1, *s_a2;
+
+    // not strtok'd line for later use
     char line_copy[strlen(line) + 1];
     strcpy(line_copy, line);
+    
     cmd = strtok(line, " ");
     uint32_t a1, a2;
 
@@ -184,6 +200,7 @@ int parse_cmd(char *line, int serial_port) {
         }
     }
 
+    // list breakpoints
     if (match_strs(cmd, "bl", "list")) {
         printf("List breakpoints\n");
         printf("NUM  |  PC\n");
@@ -308,10 +325,13 @@ int parse_cmd(char *line, int serial_port) {
         return mcu_mem_write_byte(serial_port, a1, a2);
     }
 
+    // print unrecognized cmd msg and return error
     unrecognized_cmd(line_copy);
     return 1;
 }
 
+// DESCRIPTION: launches a debugger command line interface (a la GDB)
+//   on the device at the designated serial port
 void debug_cli(char *path, int serial_port) {
     char *line;
     int err = 0;
@@ -319,6 +339,7 @@ void debug_cli(char *path, int serial_port) {
     printf("\n" CYAN "UART Debugger" RESET " | " MAGENTA "%s\n" RESET, VERSION);
     printf("Enter 'h' or 'help' for usage details.\n");
 
+    // run until EOD is read
     while (1) {
         // prompt
         printf("\nuart-db @ %s", path);
@@ -343,16 +364,21 @@ void debug_cli(char *path, int serial_port) {
         else if (match_strs(line, "q", "quit")) {
             free(line);
             return;
+        // I find myself constantly wanting to exit with "exit"
+        // so I've included that for as well
         } else if (match_strs(line, "ex", "exit")) {
             free(line);
             return;
+        // for exiting on EOD 
         } else if (!line) {
             free(line);
             return;
+        // parse the line
         } else if (*line) {
             add_history(line);
             err = parse_cmd(line, serial_port);
         }
+        // don't forget to free!
         free(line);
     }
 }
