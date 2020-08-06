@@ -21,6 +21,7 @@ all:
 
 release:
 	make all
+	cp -r open-ports $(BUILD)
 	cp -r client/src $(BUILD)
 	tar czf $(NAME)-$(VERSION).tar.gz $(BUILD)/*
 	rm -r $(BUILD)
