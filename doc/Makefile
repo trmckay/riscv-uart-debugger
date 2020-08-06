@@ -4,7 +4,7 @@ TEX = protocol.tex
 TARGET = pdf
 
 all:
-	(cd $(DIR); $(TOOL) $(TEX))
+	(cd $(DIR); $(TOOL) $(TEX); $(TOOL) $(TEX))
 	mkdir -p $(TARGET)
 	mv tex/*.pdf pdf
 clean:
