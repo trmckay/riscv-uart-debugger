@@ -48,4 +48,6 @@ echo -e "\nView documention:" ;\
 ls *.pdf
 
 echo -e "\nHardware module located in 'module/design'. Launch the debugger with the command
-'uart-db'."
+'uart-db'. Don't forget to update these modules in your design!"
+
+prompt "View changelog? [y/n]: " && $EDITOR CHANGELOG
