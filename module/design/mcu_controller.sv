@@ -78,7 +78,7 @@ module mcu_controller(
         .clk(clk),
         .cmd(l_cmd),
         .addr(l_addr),
-        .in_valid(serial_valid),
+        .in_valid(l_serial_valid),
         .pc(pc),
         .mcu_busy(mcu_busy),
 

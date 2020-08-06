@@ -78,6 +78,7 @@ module serial_driver #(
     assign out_valid = r_out_valid;
     assign cmd = r_cmd;
     assign d_in = r_d_in;
+    assign addr = r_addr;
 
     always_ff @(posedge clk) begin
 

@@ -158,23 +158,36 @@ module controller_fsm(
                         end
                         FN_MEM_RD_WORD: begin
                             mem_rd = 1;
+                            out_valid = 1;
                             l_ns = S_WAIT_MEM_RD;
                         end
                         FN_MEM_WR_WORD: begin
                             mem_wr = 1;
+                            out_valid = 1;
                             l_ns = S_WAIT_MEM_WR;
                         end
                         FN_MEM_RD_BYTE: begin
                             mem_rd = 1;
                             mem_rw_byte = 1;
+                            out_valid = 1;
                             l_ns = S_WAIT_MEM_RD;
                         end
                         FN_MEM_WR_BYTE: begin
                             mem_wr = 1;
                             mem_rw_byte = 1;
+                            out_valid = 1;
                             l_ns = S_WAIT_MEM_WR;
                         end
-
+                        FN_REG_RD: begin
+                            rf_rd = 1;
+                            out_valid = 1;
+                            l_ns = S_WAIT_REG_RD;
+                        end
+                        FN_REG_WR: begin
+                            rf_wr = 1;
+                            out_valid = 1;
+                            l_ns = S_WAIT_REG_WR;
+                        end
                     endcase // case(debug_fn)
                 end            
                 // no command given, stay idle
