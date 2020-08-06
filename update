@@ -11,7 +11,8 @@ function prompt {
 }
 
 if [[ $(git fetch) ]]; then
-    prompt "Repository updated. Install changes?" && git pull; ./install
+    prompt "Repository updated. Install changes?" && \
+        git pull; ./install; echo "Don't forget to re-add the updated .sv files!\n"
 else
     echo "Already up to date."
 fi
