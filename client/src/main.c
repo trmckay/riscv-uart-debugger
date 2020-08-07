@@ -4,6 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO:
+// This file desparately needs to be refactored and cleaned.
+// The UI leading up to the launch of the actual debugger could
+// use some improvement as well.
+//
+// Also, the port should probably be initialized with some sort of structure
+// instead of globals.
+
 void usage(char *msg);
 void parse_args(int argc, char *argv[], char **path);
 void start(char *path);
