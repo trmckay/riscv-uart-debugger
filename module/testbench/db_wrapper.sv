@@ -7,21 +7,76 @@ module db_wrapper(
     output stx
 );
 
+    localparam MEM_SIZE_WORDS = 4096;
+    localparam MEM_SIZE = 4 * MEM_SIZE_WORDS;
+
     logic clk = 0;
     logic valid, busy;
     
     logic [31:0] counter = 0;
-    reg [31:0] r_rand = 0;
     reg [15:0] r_sseg_data;
     reg [15:0] r_led = 0;
     
-    logic [31:0] addr, d_in;
+    logic [31:0] addr, d_in, d_rd;
     reg [31:0] r_addr, r_d_in;
 
     assign led = r_led;
     assign busy = valid || (counter > 0);
 
     assign r_sseg_data = {r_addr[7:0], r_d_in[7:0]};
+
+    reg [7:0] memory[MEM_SIZE_BYTES];
+    reg [31:0] reg_file[31];
+
+    // memory and register file reads
+    always_comb begin
+        // for reads, data should be ready when busy goes low, per protocol
+        d_rd = 'hFFFF; // arbitrary value, but it sticks out
+
+        if (!busy)
+            if (mem_rd) begin
+                if (mem_rw_byte) begin
+                    // ready only the byte
+                    d_rd = memory[addr]; 
+                end
+                else begin
+                    d_rd = {memory[addr], memory[addr+1], memory[addr+2], memory[addr+3]};
+                    // note: does not account for reads that are not aligned with a word
+                    // (addr % 4 != 0)
+                end
+            end
+            else if (reg_rd) begin
+                if (addr == 0) begin
+                    d_rd = 0;
+                end
+                else begin
+                    d_rd = reg_file[addr - 1];
+                end
+            end
+        end
+
+    end
+
+    // memory and reg file writes
+    always_ff @(posedge clk) begin
+        if (valid) begin
+            if (mem_wr) begin
+                if (mem_rw_byte) begin
+                    memory[addr] <= d_in;
+                end
+                else begin
+                    memory[addr] <= d_in[31:24];
+                    memory[addr] <= d_in[23:16];
+                    memory[addr] <= d_in[15:8];
+                    memory[addr] <= d_in[7:0];
+                end
+            end
+            else if (reg_wr) begin
+                if (addr != 0)
+                    reg_file[addr - 1] <= d_in;
+            end
+        end
+    end
 
     sseg_disp sseg(
         .DATA_IN(r_sseg_data),
@@ -30,26 +85,7 @@ module db_wrapper(
         .CATHODES(seg),
         .ANODES(an)
     );
-    
-//    // SERIAL DRIVER    
-//    logic [3:0] cmd;
-//    reg [3:0] r_cmd = 0;
-//
-//    serial_driver serial(
-//        .clk(clk),
-//        .srx(srx),
-//        .stx(stx),
-//        .ctrlr_busy(busy),
-//        .d_rd(r_rand),
-//        .error(0),
-//        .reset(0),
-//        .cmd(cmd),
-//        .addr(addr),
-//        .d_in(d_in),
-//        .out_valid(valid)
-//    );
 
-    // FULL DEBUGGER
     logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr, mem_rw_byte;
     logic [4:0] counter_pc;
     logic [31:0] counter_delay = 0;
@@ -63,7 +99,7 @@ module db_wrapper(
         .stx(stx),
         .pc(pc),
         .mcu_busy(mcu_busy),
-        .d_rd(r_rand),
+        .d_rd(d_rd),
         .error(1'b0),
         .d_in(d_in),
         .addr(addr),
@@ -95,17 +131,10 @@ module db_wrapper(
          
         if (valid) begin
             // long delay
-            counter <= 1000000;
+            counter <= 100000;
             r_d_in <= d_in;
             r_addr <= addr;
             r_led[0] <= 1;
-            
-//            // SERIAL DRIVER
-//            r_cmd <= cmd;
-//            r_led[4:1] <= cmd;
-
-            // FULL DEBUGGER
-            r_rand <= addr + pc;
             
             if (pause) begin
                 r_led[4:1] <= 1;
