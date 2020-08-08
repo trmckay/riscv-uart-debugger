@@ -5,9 +5,17 @@ CLIENT = client/build
 DOC = doc/pdf
 MODULE = module/design
 
-all:
+rv32:
 	(cd doc; make)
-	(cd client; make)
+	(cd client; make rv32)
+	make copy
+
+rv64:
+	(cd doc; make)
+	(cd client; make rv64)
+	make copy
+
+copy:
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/client
 	mkdir -p $(BUILD)/doc
@@ -17,7 +25,6 @@ all:
 	cp $(MODULE)/* $(BUILD)/module
 	(cd client; make clean)
 	(cd doc; make remove)
-	@echo -e "\nMake successful!"
 
 release:
 	make all
