@@ -79,6 +79,7 @@ int open_serial(char *path, int *serial_port) {
     return 0;
 }
 
+// send a word to the device and return 0 if successful
 int send_word(int serial_port, uint32_t w) {
     ssize_t bw;
     w = htonl(w);
@@ -97,6 +98,7 @@ int send_word(int serial_port, uint32_t w) {
     return 0;
 }
 
+// read a word from the device and return 0 if successful
 int recv_word(int serial_port, uint32_t *word) {
     uint32_t w;
     ssize_t br;
@@ -118,6 +120,7 @@ int recv_word(int serial_port, uint32_t *word) {
     return 0;
 }
 
+// wait for a readable byte until timeout
 int wait_readable(int serial_port, int msec) {
     int r;
     fd_set set;
@@ -138,6 +141,9 @@ int wait_readable(int serial_port, int msec) {
     return FD_ISSET(serial_port, &set);
 }
 
+// read a word after the specified timeout
+// if it's not ready yet, the read fails
+// return 0 on success
 int read_word(int serial_port, uint32_t *word) {
     uint32_t r;
     if (wait_readable(serial_port, TIMEOUT_MSEC)) {

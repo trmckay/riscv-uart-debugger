@@ -4,6 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO:
+// This file desparately needs to be refactored and cleaned.
+// The UI leading up to the launch of the actual debugger could
+// use some improvement as well.
+//
+// Also, the port should probably be initialized with some sort of structure
+// instead of globals.
+
 void usage(char *msg);
 void parse_args(int argc, char *argv[], char **path);
 void start(char *path);
@@ -44,7 +52,7 @@ void parse_args(int argc, char *argv[], char **path) {
     if (argc == 1) {
         printf("Autodetect serial ports in '/dev/'? ");
         char *line = readline("[y/N]: ");
-        if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0) {
+        if (strcasecmp(line, "y") == 0) {
             autodetect();
             exit(EXIT_SUCCESS);
         } else {
@@ -132,7 +140,7 @@ void autodetect() {
         "Or, you can run the program as superuser.\n");
     
     char *line = readline("\nProceed with a different device? [y/N]: ");
-    if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0)
+    if (strcasecmp(line, "y") == 0)
         retry();
     else
         exit(EXIT_FAILURE);

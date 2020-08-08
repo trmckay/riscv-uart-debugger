@@ -1,69 +1,47 @@
-module db_wrapper(
-    input clk_100MHz,
+module db_wrapper #(
+    CLK_RATE = 50,
+    BAUD = 115200,
+    MEM_SIZE_WORDS = 64
+    )(
+    input clk,
     input srx,
-    output [15:0] led,
-    output [7:0] seg,
-    output [3:0] an,
-    output stx
+    output stx,
+    output [15:0] led
 );
 
-    logic clk = 0;
+    localparam MEM_SIZE_BYTES = 4 * MEM_SIZE_WORDS;
     logic valid, busy;
     
     logic [31:0] counter = 0;
-    reg [31:0] r_rand = 0;
-    reg [15:0] r_sseg_data;
     reg [15:0] r_led = 0;
     
-    logic [31:0] addr, d_in;
+    logic [31:0] addr, d_in, d_rd;
     reg [31:0] r_addr, r_d_in;
 
     assign led = r_led;
     assign busy = valid || (counter > 0);
 
-    assign r_sseg_data = {r_addr[7:0], r_d_in[7:0]};
-
-    sseg_disp sseg(
-        .DATA_IN(r_sseg_data),
-        .CLK(clk),
-        .MODE(1'b0),
-        .CATHODES(seg),
-        .ANODES(an)
-    );
+    reg [7:0] mem_byte[MEM_SIZE_BYTES];
+    reg [31:0] reg_file[31];
     
-//    // SERIAL DRIVER    
-//    logic [3:0] cmd;
-//    reg [3:0] r_cmd = 0;
-//
-//    serial_driver serial(
-//        .clk(clk),
-//        .srx(srx),
-//        .stx(stx),
-//        .ctrlr_busy(busy),
-//        .d_rd(r_rand),
-//        .error(0),
-//        .reset(0),
-//        .cmd(cmd),
-//        .addr(addr),
-//        .d_in(d_in),
-//        .out_valid(valid)
-//    );
-
-    // FULL DEBUGGER
-    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr, mem_rw_byte;
+    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr;
+    logic [3:0] mem_be;
     logic [4:0] counter_pc;
     logic [31:0] counter_delay = 0;
     logic [31:0] pc;
     assign pc = {28'b0, counter_pc};
     reg paused = 0;
-    
-    mcu_controller(
+
+    mcu_controller #(
+        .CLK_RATE(CLK_RATE),
+        .BAUD(BAUD)
+        )(
         .clk(clk),
         .srx(srx),
         .stx(stx),
         .pc(pc),
         .mcu_busy(mcu_busy),
-        .d_rd(r_rand),
+        .d_rd(d_rd),
         .error(1'b0),
         .d_in(d_in),
         .addr(addr),
@@ -74,14 +52,58 @@ module db_wrapper(
         .reg_wr(reg_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
-        .mem_rw_byte(mem_rw_byte),
+        .mem_be(mem_be),
         .valid(valid)
     );
+
+    // memory and register file reads
+    always_comb begin
+        // for reads, data should be ready when busy goes low, per protocol
+        d_rd = 'hFFFF; // arbitrary value, but it sticks out
+
+        if (!busy) begin
+            if (mem_rd) begin
+                if (mem_be == 4'b1111)
+                    d_rd = {mem_byte[addr], mem_byte[addr+1], mem_byte[addr+2], mem_byte[addr+3]};
+                else begin
+                    for (int i = 0; i < 3; i++) begin
+                        if (mem_be[i])
+                            d_rd = (mem_byte[addr+i] >> i);
+                    end
+                end
+            end
+            else if (reg_rd) begin
+                if (addr == 0) begin
+                    d_rd = 0;
+                end
+                else begin
+                    d_rd = reg_file[addr-1];
+                end
+            end
+        end
+    end
     
-    // create 50 MHz clock
-    always_ff @(posedge clk_100MHz) begin
-        clk = ~clk;
-    end // always_ff
+    logic [7:0] d_in_byte[4];
+    assign d_in_byte[3] = d_in[31:24];
+    assign d_in_byte[2] = d_in[23:16];
+    assign d_in_byte[1] = d_in[15:8];
+    assign d_in_byte[0] = d_in[7:0];
+
+    // memory and reg file writes
+    always_ff @(posedge clk) begin
+        if (valid) begin
+            if (mem_wr) begin
+                for (int i = 0; i < 3; i++) begin
+                    if (mem_be[i])
+                        mem_byte[addr+i] <= d_in_byte[i];
+                end
+            end
+            else if (reg_wr) begin
+                if (addr != 0)
+                    reg_file[addr - 1] <= d_in;
+            end
+        end
+    end
     
     always_ff @(posedge clk) begin
         r_led[15] <= busy;
@@ -95,17 +117,10 @@ module db_wrapper(
          
         if (valid) begin
             // long delay
-            counter <= 1000000;
+            counter <= 100000;
             r_d_in <= d_in;
             r_addr <= addr;
             r_led[0] <= 1;
-            
-//            // SERIAL DRIVER
-//            r_cmd <= cmd;
-//            r_led[4:1] <= cmd;
-
-            // FULL DEBUGGER
-            r_rand <= addr + pc;
             
             if (pause) begin
                 r_led[4:1] <= 1;

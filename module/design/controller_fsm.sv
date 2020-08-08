@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////
 // Module: Controller FSM for UART Debugger
 // Author: Trevor McKay
-// Version: v1.0
+// Version: v1.1
 ///////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
@@ -29,7 +29,7 @@ module controller_fsm(
     output logic mem_rd,
     output logic rf_wr,
     output logic mem_wr,
-    output logic mem_rw_byte,
+    output logic [3:0] mem_be,
 
     // controller -> sdec
     output logic ctrlr_busy
@@ -109,7 +109,7 @@ module controller_fsm(
         rf_wr = 0;
         mem_rd = 0;
         mem_wr = 0;
-        mem_rw_byte = 0;
+        mem_be = 0;
         l_ns  = S_IDLE;
 
         /* controller will output no commands and
@@ -158,23 +158,25 @@ module controller_fsm(
                         end
                         FN_MEM_RD_WORD: begin
                             mem_rd = 1;
+                            mem_be = 4'b1111;
                             out_valid = 1;
                             l_ns = S_WAIT_MEM_RD;
                         end
                         FN_MEM_WR_WORD: begin
                             mem_wr = 1;
+                            mem_be = 4'b1111;
                             out_valid = 1;
                             l_ns = S_WAIT_MEM_WR;
                         end
                         FN_MEM_RD_BYTE: begin
                             mem_rd = 1;
-                            mem_rw_byte = 1;
+                            mem_be = 1'b1 << addr[1:0];
                             out_valid = 1;
                             l_ns = S_WAIT_MEM_RD;
                         end
                         FN_MEM_WR_BYTE: begin
                             mem_wr = 1;
-                            mem_rw_byte = 1;
+                            mem_be = 1'b1 << addr[1:0];
                             out_valid = 1;
                             l_ns = S_WAIT_MEM_WR;
                         end
@@ -238,6 +240,7 @@ module controller_fsm(
             S_WAIT_MEM_RD: begin
                 if (mcu_busy) begin
                     mem_rd = 1;
+                    mem_be = ((cmd == FN_MEM_RD_BYTE) ? (1'b1 << addr[1:0]) : 4'b1111);
                     l_ns = S_WAIT_MEM_RD;
                 end
                 else begin
@@ -249,6 +252,7 @@ module controller_fsm(
             S_WAIT_MEM_WR: begin
                 if (mcu_busy) begin
                     mem_wr = 1;
+                    mem_be = ((cmd == FN_MEM_RD_BYTE) ? (1'b1 << addr[1:0]) : 4'b1111);
                     l_ns = S_WAIT_MEM_RD;
                 end
                 else begin

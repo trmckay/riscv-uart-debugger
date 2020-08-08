@@ -1,5 +1,5 @@
 NAME = uart-db
-VERSION = v1.0
+VERSION = v1.1
 BUILD = $(NAME)-build
 CLIENT = client/build
 DOC = doc/pdf
@@ -21,6 +21,7 @@ all:
 
 release:
 	make all
+	cp -r open-ports $(BUILD)
 	cp -r client/src $(BUILD)
 	tar czf $(NAME)-$(VERSION).tar.gz $(BUILD)/*
 	rm -r $(BUILD)

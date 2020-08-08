@@ -1,5 +1,29 @@
 #include "debug.h"
 
+// DESCRIPTION: Sends a command in the following format to the device.
+//              HOST                 TARGET
+//          command (word) ------------>
+//               <---------------- echo command
+//          address (word) ------------>
+//               <---------------- echo address
+//          data (word) --------------->
+//               <---------------- echo data
+//                              executes command...
+//                               ...    
+//                                    ...
+//                                         ...
+//               <---------------- reply (word)
+//
+// ARGUMENTS:
+//   serial_port: the FD of the device
+//           cmd: word containing the command code (see debug.h)
+//          addr: word address on which the command should be applied
+//          data: word of data that should be written
+//          argc: the number of arguments the command depends on
+//                (i.e pause is zero, write memory is 2)
+//         reply: pointer to a word that will store the read data
+//
+// RETURNS: Non-zero if the command files in the client (i.e. echo incorrect).
 int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
              int argc, uint32_t *reply) {
     uint32_t r;
@@ -29,6 +53,7 @@ int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
                 "Critical error: could not read echo of command bytes\n");
         exit(EXIT_FAILURE);
     }
+    // only check that echo matches if argc includes this
     if ((argc >= 1) && (r != addr)) {
         fprintf(stderr, "Error: echo did not match address bytes\n");
         return 1;
@@ -44,6 +69,7 @@ int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
                 "Critical error: could not read echo of command bytes\n");
         exit(EXIT_FAILURE);
     }
+    // only check that echo matches if argc includes this
     if ((argc >= 2) && (r != data)) {
         fprintf(stderr, "Error: echo did not match address bytes\n");
         return 1;
@@ -59,15 +85,19 @@ int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
     return 0;
 }
 
+// DESCRIPTION: Run a test to verify the integrity of the connection
+// RETURNS: 1 if failed, 0 if success
 int connection_test(int serial_port, int n, int logging) {
     int misses = 0;
     int do_log = logging;
     uint32_t r, s;
     FILE *log;
 
+    // start stopwatch
     time_t t_start;
     time(&t_start);
 
+    // open file for logging
     if (do_log) {
         log = fopen("test.log", "w");
         if (log == NULL) {
@@ -76,10 +106,16 @@ int connection_test(int serial_port, int n, int logging) {
         }
     }
 
+    // actual number of kilobytes transfered
     float nkb = (float)(n * 7 * 4) / 1024;
+    // number of useful kilobytes transfered
     float nukb = (float)(n * 4) / 1024;
     printf("Testing connection with %d commands (%.2f kB)\n", n, nkb);
 
+    // the following loop will:
+    //   - Send a bunch of NONE commands to the MCU
+    //   - Send random address/data words
+    //   - Check and keep track of invalid echos
     for (int i = 0; i < n; i++) {
         fprintf(stderr, "Progress: %.1f%%\r", (float)(i * 100) / n);
 
@@ -135,9 +171,11 @@ int connection_test(int serial_port, int n, int logging) {
         read_word(serial_port, &r);
     }
 
+    // stop the stopwatch
     time_t t_fin;
     time(&t_fin);
 
+    // print out some useful data
     int dt = (int)(t_fin - t_start);
     float acc = (float)((3 * n) - misses) / (3 * n);
     printf("                           ");
@@ -160,10 +198,8 @@ int connection_test(int serial_port, int n, int logging) {
         return 0;
 }
 
-
-// looks for suitible terminals in the directory 'parent'
-// and saves path to 'path'
-// returns 0 for success, 1 for no result, 2+ for error
+////// DEBUGGER FUNCTIONS /////////////////////////////
+// Request that the MCU perform some sort of operation
 
 int mcu_pause(int serial_port) {
     uint32_t r;

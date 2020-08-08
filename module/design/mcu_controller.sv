@@ -8,7 +8,7 @@
 // Description: Hardware module to add support for remote debugging, programming,
 // etc. via low-level control of a target MCU.
 // 
-// Version: v1.0
+// Version: v1.1
 //
 // Revision  0.01 - File Created
 // Revision  0.10 - Controller first rev.
@@ -16,6 +16,7 @@
 // Revision  0.20 - First rev. serial module, byte granularity
 // Revision  0.50 - Tentative working
 // Revision  1.0  - Tested, working
+// Revision  1.1  - Exchange mem_rw_byte for byte mask, parameters
 //
 // TODO:
 //   - serial decoder
@@ -24,7 +25,10 @@
 //   - write documentation
 /////////////////////////////////////////////////////////////////////////////////
 
-module mcu_controller(
+module mcu_controller #(
+    BAUD = 115200,
+    CLK_RATE = 50
+    )(
     input clk,
 
     // user <-> debugger (via serial)
@@ -47,19 +51,21 @@ module mcu_controller(
     output reg_wr,
     output mem_rd,
     output mem_wr,
-    output mem_rw_byte,
+    output [3:0] mem_be,
     output valid
 );
 
     logic l_ctrlr_busy, l_serial_valid;
     logic [3:0] l_cmd;
+    logic [3:0] l_mem_be;
     logic [31:0] l_addr;
 
     assign addr = l_addr;
+    assign mem_be = l_mem_be;
 
     serial_driver #(
-        .BAUD(115200),
-        .CLK_RATE(50)
+        .BAUD(BAUD),
+        .CLK_RATE(CLK_RATE)
     ) serial(
         .clk(clk),
         .reset(1'b0),
@@ -90,7 +96,7 @@ module mcu_controller(
         .rf_wr(rf_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
-        .mem_rw_byte(mem_rw_byte),
+        .mem_be(l_mem_be),
         .out_valid(valid),
         .ctrlr_busy(l_ctrlr_busy)
     );
