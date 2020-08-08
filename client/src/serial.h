@@ -1,6 +1,7 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include "types.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -16,7 +17,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-typedef unsigned char byte_t;
 typedef struct termios term_sa;
 
 #define EQUAL 0
@@ -33,7 +33,7 @@ typedef struct termios term_sa;
 #define BYTES_PER_RCV 4
 
 int open_serial(char *path, int *serial_port);
-int send_word(int serial_port, uint32_t w);
-int read_word(int serial_port, uint32_t *w);
+int send_word(int serial_port, word_t w);
+int read_word(int serial_port, word_t *w);
 
 #endif

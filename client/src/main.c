@@ -131,14 +131,13 @@ void autodetect() {
         closedir(dir);
     } else
         perror("");
-    fprintf(
-        stderr,
-        RED "\nError: autodetection failed\n\n" RESET
-        "Note: Often times, devices will be inaccessible without first modifying permissions.\n"
-        "You can grant access yourself with:\n"
-        "\n    sudo chmod o+rw <device>\n\n"
-        "Or, you can run the program as superuser.\n");
-    
+    fprintf(stderr, RED "\nError: autodetection failed\n\n" RESET
+                        "Note: Often times, devices will be inaccessible "
+                        "without first modifying permissions.\n"
+                        "You can grant access yourself with:\n"
+                        "\n    sudo chmod o+rw <device>\n\n"
+                        "Or, you can run the program as superuser.\n");
+
     char *line = readline("\nProceed with a different device? [y/N]: ");
     if (strcasecmp(line, "y") == 0)
         retry();

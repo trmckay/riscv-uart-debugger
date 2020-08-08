@@ -51,7 +51,7 @@ int open_serial(char *path, int *serial_port) {
         fprintf(stderr, "Error: file is not a terminal\n");
         return 2;
     }
-    
+
     /* Save the terminal attributes so we can restore them later. */
     printf("Reading terminal attributes and saving for restore...");
     tcgetattr(*serial_port, &saved_attributes);
@@ -80,7 +80,7 @@ int open_serial(char *path, int *serial_port) {
 }
 
 // send a word to the device and return 0 if successful
-int send_word(int serial_port, uint32_t w) {
+int send_word(int serial_port, word_t w) {
     ssize_t bw;
     w = htonl(w);
 
@@ -99,8 +99,8 @@ int send_word(int serial_port, uint32_t w) {
 }
 
 // read a word from the device and return 0 if successful
-int recv_word(int serial_port, uint32_t *word) {
-    uint32_t w;
+int recv_word(int serial_port, word_t *word) {
+    word_t w;
     ssize_t br;
     w = 0;
 
@@ -144,8 +144,8 @@ int wait_readable(int serial_port, int msec) {
 // read a word after the specified timeout
 // if it's not ready yet, the read fails
 // return 0 on success
-int read_word(int serial_port, uint32_t *word) {
-    uint32_t r;
+int read_word(int serial_port, word_t *word) {
+    word_t r;
     if (wait_readable(serial_port, TIMEOUT_MSEC)) {
         recv_word(serial_port, &r);
         *word = r;

@@ -21,11 +21,11 @@ int open_file(char *path, off_t *num_words) {
 }
 
 // read a word from the steam
-int read_word_file(int file, uint32_t *w) {
+int read_word_file(int file, word_t *w) {
     ssize_t br;
-    uint32_t r;
+    word_t r;
 
-    br = read(file, &r, 4);
+    br = read(file, &r, WORD_SIZE);
 
     if (br == -1) {
         perror("read(file)");

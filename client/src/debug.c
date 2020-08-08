@@ -9,7 +9,7 @@
 //          data (word) --------------->
 //               <---------------- echo data
 //                              executes command...
-//                               ...    
+//                               ...
 //                                    ...
 //                                         ...
 //               <---------------- reply (word)
@@ -24,9 +24,9 @@
 //         reply: pointer to a word that will store the read data
 //
 // RETURNS: Non-zero if the command files in the client (i.e. echo incorrect).
-int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
-             int argc, uint32_t *reply) {
-    uint32_t r;
+int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
+             word_t *reply) {
+    word_t r;
 
     // send command bytes
     if (send_word(serial_port, cmd)) {
@@ -90,7 +90,7 @@ int send_cmd(int serial_port, uint32_t cmd, uint32_t addr, uint32_t data,
 int connection_test(int serial_port, int n, int logging) {
     int misses = 0;
     int do_log = logging;
-    uint32_t r, s;
+    word_t r, s;
     FILE *log;
 
     // start stopwatch
@@ -202,76 +202,76 @@ int connection_test(int serial_port, int n, int logging) {
 // Request that the MCU perform some sort of operation
 
 int mcu_pause(int serial_port) {
-    uint32_t r;
+    word_t r;
     return send_cmd(serial_port, FN_PAUSE, 0, 0, 0, &r);
 }
 
 int mcu_resume(int serial_port) {
-    uint32_t r;
+    word_t r;
     return send_cmd(serial_port, FN_RESUME, 0, 0, 0, &r);
 }
 
 int mcu_step(int serial_port) {
-    uint32_t r;
+    word_t r;
     return send_cmd(serial_port, FN_STEP, 0, 0, 0, &r);
 }
 
 int mcu_reset(int serial_port) {
-    uint32_t r;
+    word_t r;
     return send_cmd(serial_port, FN_RESET, 0, 0, 0, &r);
 }
 
 int mcu_status(int serial_port, int *status) {
-    uint32_t r;
+    word_t r;
     if (send_cmd(serial_port, FN_STATUS, 0, 0, 0, &r))
         return 1;
     *status = r;
     return 0;
 }
 
-int mcu_add_breakpoint(int serial_port, uint32_t addr) {
-    uint32_t r;
+int mcu_add_breakpoint(int serial_port, word_t addr) {
+    word_t r;
     return send_cmd(serial_port, FN_BR_PT_ADD, addr, 0, 1, &r);
 }
 
-int mcu_rm_breakpoint(int serial_port, uint32_t index) {
-    uint32_t r;
+int mcu_rm_breakpoint(int serial_port, word_t index) {
+    word_t r;
     return send_cmd(serial_port, FN_BR_PT_RM, index, 0, 1, &r);
 }
 
-int mcu_reg_read(int serial_port, uint32_t addr, uint32_t *data) {
-    uint32_t r;
+int mcu_reg_read(int serial_port, word_t addr, word_t *data) {
+    word_t r;
     if (send_cmd(serial_port, FN_REG_RD, addr, 0, 1, &r))
         return 1;
     *data = r;
     return 0;
 }
 
-int mcu_reg_write(int serial_port, uint32_t addr, uint32_t data) {
-    uint32_t r;
+int mcu_reg_write(int serial_port, word_t addr, word_t data) {
+    word_t r;
     return send_cmd(serial_port, FN_REG_WR, addr, data, 2, &r);
 }
 
-int mcu_mem_read_byte(int serial_port, uint32_t addr, byte_t *data) {
-    uint32_t r;
+int mcu_mem_read_byte(int serial_port, word_t addr, byte_t *data) {
+    word_t r;
     if (send_cmd(serial_port, FN_MEM_WR_BYTE, addr, 0, 1, &r))
         return 1;
     *data = r;
     return 0;
 }
 
-int mcu_mem_write_word(int serial_port, uint32_t addr, uint32_t data) {
-    uint32_t r;
+int mcu_mem_write_word(int serial_port, word_t addr, word_t data) {
+    word_t r;
     return send_cmd(serial_port, FN_MEM_WR_WORD, addr, data, 2, &r);
 }
 
-int mcu_mem_write_byte(int serial_port, uint32_t addr, byte_t data) {
-    uint32_t r;
+int mcu_mem_write_byte(int serial_port, word_t addr, byte_t data) {
+    word_t r;
     return send_cmd(serial_port, FN_MEM_WR_BYTE, addr, data, 2, &r);
 }
 
-int mcu_mem_read_word(int serial_port, uint32_t addr, uint32_t *data) {
-    uint32_t r;
+int mcu_mem_read_word(int serial_port, word_t addr, word_t *data) {
+    word_t r;
     if (send_cmd(serial_port, FN_MEM_RD_WORD, addr, 0, 1, &r))
         return 1;
     *data = r;
@@ -280,7 +280,7 @@ int mcu_mem_read_word(int serial_port, uint32_t addr, uint32_t *data) {
 
 int mcu_program(int serial_port, char *path) {
     off_t n;
-    uint32_t w, addr = 0x0;
+    word_t w, addr = 0x0;
     int f;
 
     if ((f = open_file(path, &n)) == -1) {

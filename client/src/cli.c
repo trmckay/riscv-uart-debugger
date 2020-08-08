@@ -21,7 +21,7 @@ int parse_int(char *str) {
 
     // hex formatted
     if (match_strs(prefix, "0x", "0X")) {
-        return (uint32_t)strtol(str, NULL, 0);
+        return (word_t)strtol(str, NULL, 0);
     }
     // decimal formatted
     else
@@ -40,24 +40,29 @@ void unrecognized_cmd(char *line) {
 
 // long-form help message
 void help() {
-    printf("============================ ABOUT ====================================\n"
+    printf("============================ ABOUT "
+           "====================================\n"
            "Version: %s, Date: %s\n",
            VERSION, VERDATE);
     printf("Author: Trevor McKay\n"
            "Please send bugs to trmckay@calpoly.edu\n\n");
-    printf("============================ USAGE ====================================\n"
+    printf("============================ USAGE "
+           "====================================\n"
            "Run with 'uart-db <device> to connect to a specific target.\n"
            "Run with no arguments to autodetect a target.\n"
            "Type a command and its arguments, then press enter to execute.\n"
-           "You can also execute external shell commands by escaping them with '!'.\n\n"  
-           "======================= LIST OF COMMANDS ==============================\n"
+           "You can also execute external shell commands by escaping them with "
+           "'!'.\n\n"
+           "======================= LIST OF COMMANDS "
+           "==============================\n"
            "                 'h': view this message\n"
            "                 'p': pause execution\n"
            "                 'r': resume execution\n"
            "     'pr <prog.bin>': program with the specified binary file\n"
            "                'rs': reset execution\n"
            "                'st': request MCU status\n"
-           "            'b <pc>': add a breakpoint to the specified program counter\n"
+           "            'b <pc>': add a breakpoint to the specified program "
+           "counter\n"
            "           'd <num>': delete the specified breakpoint\n"
            "                'bl': list breakpoints\n"
            "          'rr <num>': read the data at the register\n"
@@ -77,9 +82,9 @@ int parse_cmd(char *line, int serial_port) {
     // not strtok'd line for later use
     char line_copy[strlen(line) + 1];
     strcpy(line_copy, line);
-    
+
     cmd = strtok(line, " ");
-    uint32_t a1, a2;
+    word_t a1, a2;
 
     s_a1 = strtok(NULL, " ");
     s_a2 = strtok(NULL, " ");
@@ -134,7 +139,7 @@ int parse_cmd(char *line, int serial_port) {
             return 1;
         }
         if (mcu_reset(serial_port)) {
-            fprintf(stderr,"Error: failed to reset execution\n");
+            fprintf(stderr, "Error: failed to reset execution\n");
             return 1;
         }
         return 0;
@@ -189,8 +194,7 @@ int parse_cmd(char *line, int serial_port) {
         }
         a1 = parse_int(s_a1);
         if (bps[a1] >= 0) {
-            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1,
-                   (uint32_t)bps[a1]);
+            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)bps[a1]);
             int err = mcu_rm_breakpoint(serial_port, bps[a1]);
             bps[a1] = -1;
             return err;
@@ -206,7 +210,7 @@ int parse_cmd(char *line, int serial_port) {
         printf("NUM  |  PC\n");
         for (int i = 0; i < 8; i++) {
             if (bps[i] > 0)
-                printf(" %d   |  0x%08X\n", i, (uint32_t)bps[i]);
+                printf(" %d   |  0x%08X\n", i, (word_t)bps[i]);
         }
         return 0;
     }
@@ -223,7 +227,7 @@ int parse_cmd(char *line, int serial_port) {
             return 1;
         }
         a1 = parse_int(s_a1);
-        uint32_t r;
+        word_t r;
         int err;
         err = mcu_reg_read(serial_port, a1, &r);
         printf("x%d = %d (0x%08X)\n", a1, r, r);
@@ -261,7 +265,7 @@ int parse_cmd(char *line, int serial_port) {
             return 1;
         }
         a1 = parse_int(s_a1);
-        uint32_t r;
+        word_t r;
         int err;
         err = mcu_mem_read_word(serial_port, a1, &r);
         printf("MEM[0x%08X] = %d (0x%08X)\n", a1, r, r);
@@ -364,16 +368,16 @@ void debug_cli(char *path, int serial_port) {
         else if (match_strs(line, "q", "quit")) {
             free(line);
             return;
-        // I find myself constantly wanting to exit with "exit"
-        // so I've included that for as well
+            // I find myself constantly wanting to exit with "exit"
+            // so I've included that for as well
         } else if (match_strs(line, "ex", "exit")) {
             free(line);
             return;
-        // for exiting on EOD 
+            // for exiting on EOD
         } else if (!line) {
             free(line);
             return;
-        // parse the line
+            // parse the line
         } else if (*line) {
             add_history(line);
             err = parse_cmd(line, serial_port);
