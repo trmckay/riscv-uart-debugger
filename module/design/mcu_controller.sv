@@ -47,15 +47,17 @@ module mcu_controller(
     output reg_wr,
     output mem_rd,
     output mem_wr,
-    output mem_rw_byte,
+    output mem_be,
     output valid
 );
 
     logic l_ctrlr_busy, l_serial_valid;
     logic [3:0] l_cmd;
+    logic [3:0] l_mem_be;
     logic [31:0] l_addr;
 
     assign addr = l_addr;
+    assign mem_be = l_mem_be;
 
     serial_driver #(
         .BAUD(115200),
@@ -90,7 +92,7 @@ module mcu_controller(
         .rf_wr(rf_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
-        .mem_rw_byte(mem_rw_byte),
+        .mem_be(l_mem_be),
         .out_valid(valid),
         .ctrlr_busy(l_ctrlr_busy)
     );

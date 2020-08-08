@@ -8,7 +8,7 @@ module db_wrapper(
 );
 
     localparam MEM_SIZE_WORDS = 4096;
-    localparam MEM_SIZE = 4 * MEM_SIZE_WORDS;
+    localparam MEM_SIZE_BYTES = 4 * MEM_SIZE_WORDS;
 
     logic clk = 0;
     logic valid, busy;
@@ -27,23 +27,24 @@ module db_wrapper(
 
     reg [7:0] memory[MEM_SIZE_BYTES];
     reg [31:0] reg_file[31];
+    
+    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr, mem_be;
+    logic [4:0] counter_pc;
+    logic [31:0] counter_delay = 0;
+    logic [31:0] pc;
+    assign pc = {28'b0, counter_pc};
+    reg paused = 0;
 
     // memory and register file reads
     always_comb begin
         // for reads, data should be ready when busy goes low, per protocol
         d_rd = 'hFFFF; // arbitrary value, but it sticks out
 
-        if (!busy)
+        if (!busy) begin
             if (mem_rd) begin
-                if (mem_rw_byte) begin
-                    // ready only the byte
-                    d_rd = memory[addr]; 
-                end
-                else begin
-                    d_rd = {memory[addr], memory[addr+1], memory[addr+2], memory[addr+3]};
-                    // note: does not account for reads that are not aligned with a word
-                    // (addr % 4 != 0)
-                end
+                d_rd = {memory[addr], memory[addr+1], memory[addr+2], memory[addr+3]};
+                // note: does not account for reads that are not aligned with a word
+                // (addr % 4 != 0)
             end
             else if (reg_rd) begin
                 if (addr == 0) begin
@@ -54,22 +55,17 @@ module db_wrapper(
                 end
             end
         end
-
     end
+    
 
     // memory and reg file writes
     always_ff @(posedge clk) begin
         if (valid) begin
             if (mem_wr) begin
-                if (mem_rw_byte) begin
-                    memory[addr] <= d_in;
-                end
-                else begin
-                    memory[addr] <= d_in[31:24];
-                    memory[addr] <= d_in[23:16];
-                    memory[addr] <= d_in[15:8];
-                    memory[addr] <= d_in[7:0];
-                end
+                memory[addr] <= d_in[31:24];
+                memory[addr] <= d_in[23:16];
+                memory[addr] <= d_in[15:8];
+                memory[addr] <= d_in[7:0];
             end
             else if (reg_wr) begin
                 if (addr != 0)
@@ -85,13 +81,6 @@ module db_wrapper(
         .CATHODES(seg),
         .ANODES(an)
     );
-
-    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr, mem_rw_byte;
-    logic [4:0] counter_pc;
-    logic [31:0] counter_delay = 0;
-    logic [31:0] pc;
-    assign pc = {28'b0, counter_pc};
-    reg paused = 0;
     
     mcu_controller(
         .clk(clk),
@@ -110,7 +99,7 @@ module db_wrapper(
         .reg_wr(reg_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
-        .mem_rw_byte(mem_rw_byte),
+        .mem_be(mem_be),
         .valid(valid)
     );
     
