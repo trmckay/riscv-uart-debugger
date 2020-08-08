@@ -3,7 +3,7 @@
 ### About ###
 Control and debug a RISC-V MCU over USB UART.
 
-Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the serial\_driver instantiation in module/design/mcu\_controller.sv.
+Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the BAUD/CLK_RATE parameters of the mcu_controller module.
 
 ### Installation ###
 
