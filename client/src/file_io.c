@@ -16,7 +16,7 @@ int open_file(char *path, off_t *num_words) {
     }
 
     // return FD and size in words
-    *num_words = (s.st_size + 3) / WORD_SIZE; // round up to nearest 4 bytes
+    *num_words = (s.st_size + (WORD_SIZE - 1)) / WORD_SIZE; // round up to nearest word 
     return file;
 }
 

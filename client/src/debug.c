@@ -26,6 +26,7 @@
 // RETURNS: Non-zero if the command files in the client (i.e. echo incorrect).
 int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
              word_t *reply) {
+
     word_t r;
 
     // send command bytes
