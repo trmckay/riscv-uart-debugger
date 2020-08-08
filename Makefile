@@ -1,5 +1,5 @@
 NAME = uart-db
-VERSION = v1.0
+VERSION = v1.1
 BUILD = $(NAME)-build
 CLIENT = client/build
 DOC = doc/pdf
