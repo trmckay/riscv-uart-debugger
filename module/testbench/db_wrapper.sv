@@ -1,20 +1,18 @@
-module db_wrapper(
-    input clk_100MHz,
+module db_wrapper #(
+    CLK_RATE = 50,
+    BAUD = 115200,
+    MEM_SIZE_WORDS = 64
+    )(
+    input clk,
     input srx,
-    output [15:0] led,
-    output [7:0] seg,
-    output [3:0] an,
-    output stx
+    output stx,
+    output [15:0] led
 );
 
-    localparam MEM_SIZE_WORDS = 4096;
     localparam MEM_SIZE_BYTES = 4 * MEM_SIZE_WORDS;
-
-    logic clk = 0;
     logic valid, busy;
     
     logic [31:0] counter = 0;
-    reg [15:0] r_sseg_data;
     reg [15:0] r_led = 0;
     
     logic [31:0] addr, d_in, d_rd;
@@ -23,66 +21,21 @@ module db_wrapper(
     assign led = r_led;
     assign busy = valid || (counter > 0);
 
-    assign r_sseg_data = {r_addr[7:0], r_d_in[7:0]};
-
-    reg [7:0] memory[MEM_SIZE_BYTES];
+    reg [7:0] mem_byte[MEM_SIZE_BYTES];
     reg [31:0] reg_file[31];
     
-    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr, mem_be;
+    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr;
+    logic [3:0] mem_be;
     logic [4:0] counter_pc;
     logic [31:0] counter_delay = 0;
     logic [31:0] pc;
     assign pc = {28'b0, counter_pc};
     reg paused = 0;
 
-    // memory and register file reads
-    always_comb begin
-        // for reads, data should be ready when busy goes low, per protocol
-        d_rd = 'hFFFF; // arbitrary value, but it sticks out
-
-        if (!busy) begin
-            if (mem_rd) begin
-                d_rd = {memory[addr], memory[addr+1], memory[addr+2], memory[addr+3]};
-                // note: does not account for reads that are not aligned with a word
-                // (addr % 4 != 0)
-            end
-            else if (reg_rd) begin
-                if (addr == 0) begin
-                    d_rd = 0;
-                end
-                else begin
-                    d_rd = reg_file[addr - 1];
-                end
-            end
-        end
-    end
-    
-
-    // memory and reg file writes
-    always_ff @(posedge clk) begin
-        if (valid) begin
-            if (mem_wr) begin
-                memory[addr] <= d_in[31:24];
-                memory[addr] <= d_in[23:16];
-                memory[addr] <= d_in[15:8];
-                memory[addr] <= d_in[7:0];
-            end
-            else if (reg_wr) begin
-                if (addr != 0)
-                    reg_file[addr - 1] <= d_in;
-            end
-        end
-    end
-
-    sseg_disp sseg(
-        .DATA_IN(r_sseg_data),
-        .CLK(clk),
-        .MODE(1'b0),
-        .CATHODES(seg),
-        .ANODES(an)
-    );
-    
-    mcu_controller(
+    mcu_controller #(
+        .CLK_RATE(CLK_RATE),
+        .BAUD(BAUD)
+        )(
         .clk(clk),
         .srx(srx),
         .stx(stx),
@@ -102,11 +55,55 @@ module db_wrapper(
         .mem_be(mem_be),
         .valid(valid)
     );
+
+    // memory and register file reads
+    always_comb begin
+        // for reads, data should be ready when busy goes low, per protocol
+        d_rd = 'hFFFF; // arbitrary value, but it sticks out
+
+        if (!busy) begin
+            if (mem_rd) begin
+                if (mem_be == 4'b1111)
+                    d_rd = {mem_byte[addr], mem_byte[addr+1], mem_byte[addr+2], mem_byte[addr+3]};
+                else begin
+                    for (int i = 0; i < 3; i++) begin
+                        if (mem_be[i])
+                            d_rd = (mem_byte[addr+i] >> i);
+                    end
+                end
+            end
+            else if (reg_rd) begin
+                if (addr == 0) begin
+                    d_rd = 0;
+                end
+                else begin
+                    d_rd = reg_file[addr-1];
+                end
+            end
+        end
+    end
     
-    // create 50 MHz clock
-    always_ff @(posedge clk_100MHz) begin
-        clk = ~clk;
-    end // always_ff
+    logic [7:0] d_in_byte[4];
+    assign d_in_byte[3] = d_in[31:24];
+    assign d_in_byte[2] = d_in[23:16];
+    assign d_in_byte[1] = d_in[15:8];
+    assign d_in_byte[0] = d_in[7:0];
+
+    // memory and reg file writes
+    always_ff @(posedge clk) begin
+        if (valid) begin
+            if (mem_wr) begin
+                for (int i = 0; i < 3; i++) begin
+                    if (mem_be[i])
+                        mem_byte[addr+i] <= d_in_byte[i];
+                end
+            end
+            else if (reg_wr) begin
+                if (addr != 0)
+                    reg_file[addr - 1] <= d_in;
+            end
+        end
+    end
     
     always_ff @(posedge clk) begin
         r_led[15] <= busy;
