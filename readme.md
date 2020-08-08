@@ -16,10 +16,12 @@ cd riscv-uart-debugger
 ```
 
 ### Usage ###
-Launch the tool with
+Launch the tool with:
 ```
 uart-db <device>
 ```
+Or to autodetect ports, omit the device.
+
 Your device is likely connected to /dev/ttyUSBX or /dev/ttySX.
 Once in the tool, type 'h' or 'help' for more information.
 
