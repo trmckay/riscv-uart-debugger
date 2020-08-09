@@ -2,7 +2,6 @@
 #include "serial.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 // TODO:
 // This file desparately needs to be refactored and cleaned.
@@ -85,15 +84,6 @@ void start(char *path) {
     // launch debug cli on device at serial_port
     debug_cli(path, serial_port);
     restore_term(serial_port);
-}
-
-int starts_with(char *cmp, char *str) {
-    int l = strlen(str);
-    for (int i = 0; i < l; i++) {
-        if (cmp[i] != str[i])
-            return 0;
-    }
-    return 1;
 }
 
 int poll(char *path) {

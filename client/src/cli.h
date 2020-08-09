@@ -2,6 +2,7 @@
 #define CLI_H
 
 #include "debug.h"
+#include "util.h"
 #include "serial.h"
 #include <readline/history.h>
 #include <readline/readline.h>
