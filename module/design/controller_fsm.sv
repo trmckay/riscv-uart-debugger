@@ -34,17 +34,19 @@ module controller_fsm(
     // controller -> sdec
     output logic ctrlr_busy
 );
-    
+
+    localparam MAX_BREAK_PTS = 8;
+
     // keep track of mcu state
     reg r_mcu_paused = 0;
     logic l_mcu_paused_in;
 
     // breakpoints
-    logic [31:0] break_pts[8];
+    logic [31:0] break_pts[MAX_BREAK_PTS];
     initial
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < MAX_BREAK_PTS; i++)
             break_pts[i] = 'Z;
-    reg [2:0] r_num_break_pts = 0;
+    reg [$clog2(MAX_BREAK_PTS)-1:0] r_num_break_pts = 0;
     logic l_bp_add, l_hit;
     
     localparam FN_NONE         = 4'h0;
@@ -84,7 +86,7 @@ module controller_fsm(
         // compare pc to all breakpoints
         l_hit = 0;
         if (!r_mcu_paused) begin
-            for (int i = 0; i < 8; i++) begin
+            for (int i = 0; i < MAX_BREAK_PTS; i++) begin
                 if ((pc + 4) == break_pts[i]) begin
                     r_ps <= S_BREAK_HIT;
                     l_hit = 1;
@@ -104,7 +106,7 @@ module controller_fsm(
         pause = 0;
         reset = 0;
         resume = 0;
-        l_bp_add= 0;
+        l_bp_add = 0;
         rf_rd = 0;
         rf_wr = 0;
         mem_rd = 0;
