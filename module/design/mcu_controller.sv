@@ -27,7 +27,7 @@
 
 module mcu_controller #(
     BAUD = 115200,
-    CLK_RATE = 50
+    CLK_RATE = 100
     )(
     input clk,
 
@@ -92,8 +92,8 @@ module mcu_controller #(
         .pause(pause),
         .reset(reset),
         .resume(resume),
-        .rf_rd(rf_rd),
-        .rf_wr(rf_wr),
+        .reg_rd(reg_rd),
+        .reg_wr(reg_wr),
         .mem_rd(mem_rd),
         .mem_wr(mem_wr),
         .mem_be(l_mem_be),

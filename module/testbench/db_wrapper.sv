@@ -1,7 +1,9 @@
 module db_wrapper #(
-    CLK_RATE = 50,
+    CLK_RATE = 100,
     BAUD = 115200,
-    MEM_SIZE_WORDS = 64
+    MEM_SIZE = 64,
+    RF_SIZE = 32,
+    DELAY_CYCLES = 10
     )(
     input clk,
     input srx,
@@ -9,28 +11,36 @@ module db_wrapper #(
     output [15:0] led
 );
 
-    localparam MEM_SIZE_BYTES = 4 * MEM_SIZE_WORDS;
-    logic valid, busy;
-    
-    logic [31:0] counter = 0;
-    reg [15:0] r_led = 0;
-    
-    logic [31:0] addr, d_in, d_rd;
-    reg [31:0] r_addr, r_d_in;
+    logic        valid,
+                 busy,
+                 pause,
+                 resume,
+                 reset,
+                 reg_rd,
+                 reg_wr,
+                 mem_rd,
+                 mem_wr;
+    logic [3:0]  mem_be;
+    logic [31:0] busy_counter = 0,
+                 addr,
+                 d_in,
+                 d_rd,
+                 word;
+    reg          paused = 0;
+    reg   [4:0]  pc_counter;
+    reg   [15:0] r_led = 0;
+    reg   [31:0] pc,
+                 r_addr,
+                 r_d_in,
+                 r_d_rd = 0,
+                 delay_counter = 0;
+    reg   [31:0] mem[MEM_SIZE];
+    reg   [31:0] rf[RF_SIZE];
 
-    assign led = r_led;
-    assign busy = valid || (counter > 0);
-
-    reg [7:0] mem_byte[MEM_SIZE_BYTES];
-    reg [31:0] reg_file[31];
-    
-    logic pause, resume, reset, red_rd, reg_wr, mem_rd, mem_wr;
-    logic [3:0] mem_be;
-    logic [4:0] counter_pc;
-    logic [31:0] counter_delay = 0;
-    logic [31:0] pc;
-    assign pc = {28'b0, counter_pc};
-    reg paused = 0;
+    assign led  = r_led;
+    assign busy = valid || (busy_counter > 0);
+    assign d_rd = r_d_rd;
+    assign pc   = {28'b0, pc_counter};
 
     mcu_controller #(
         .CLK_RATE(CLK_RATE),
@@ -41,7 +51,7 @@ module db_wrapper #(
         .stx(stx),
         .pc(pc),
         .mcu_busy(mcu_busy),
-        .d_rd(d_rd),
+        .d_rd(r_d_rd),
         .error(1'b0),
         .d_in(d_in),
         .addr(addr),
@@ -56,92 +66,81 @@ module db_wrapper #(
         .valid(valid)
     );
 
-    // memory and register file reads
-    always_comb begin
-        // for reads, data should be ready when busy goes low, per protocol
-        d_rd = 'hFFFF; // arbitrary value, but it sticks out
-
-        if (!busy) begin
-            if (mem_rd) begin
-                if (mem_be == 4'b1111)
-                    d_rd = {mem_byte[addr], mem_byte[addr+1], mem_byte[addr+2], mem_byte[addr+3]};
-                else begin
-                    for (int i = 0; i < 3; i++) begin
-                        if (mem_be[i])
-                            d_rd = (mem_byte[addr+i] >> i);
-                    end
-                end
-            end
-            else if (reg_rd) begin
-                if (addr == 0) begin
-                    d_rd = 0;
-                end
-                else begin
-                    d_rd = reg_file[addr-1];
-                end
-            end
-        end
+    // initialize mem and rf
+    initial begin
+        for (int i = 0; i < MEM_SIZE; i++)
+            mem[i] = 0;
+        for (int i = 0; i < RF_SIZE;  i++)
+            rf[i]  = 0;
     end
-    
-    logic [7:0] d_in_byte[4];
-    assign d_in_byte[3] = d_in[31:24];
-    assign d_in_byte[2] = d_in[23:16];
-    assign d_in_byte[1] = d_in[15:8];
-    assign d_in_byte[0] = d_in[7:0];
 
     // memory and reg file writes
     always_ff @(posedge clk) begin
+
+        // valid: command recieced
         if (valid) begin
-            if (mem_wr) begin
-                for (int i = 0; i < 3; i++) begin
-                    if (mem_be[i])
-                        mem_byte[addr+i] <= d_in_byte[i];
-                end
-            end
-            else if (reg_wr) begin
-                if (addr != 0)
-                    reg_file[addr - 1] <= d_in;
-            end
-        end
-    end
-    
-    always_ff @(posedge clk) begin
-        r_led[15] <= busy;
-        counter_delay <= counter_delay + 1;
-        
-        if (!paused && (counter_delay == 5000000)) begin
-            counter_pc <= counter_pc + 4;
-            r_led[14:11] <= counter_pc + 4;
-            counter_delay <= 0;
-        end
-         
-        if (valid) begin
-            // long delay
-            counter <= 100000;
+
+            // delay for N cycles (n * clock period must not exceed timeout)
+            busy_counter <= DELAY_CYCLES;
+            
+            // save address and input data
             r_d_in <= d_in;
             r_addr <= addr;
-            r_led[0] <= 1;
-            
-            if (pause) begin
-                r_led[4:1] <= 1;
-                paused <= 1;
-            end
-            else if (resume)
-                r_led[4:1] <= 2;
-            else if (reset)
-                r_led[4:1] <= 3;
-            else if (reg_rd)
-                r_led[4:1] <= 4;
-            else if (reg_wr)
-                r_led[4:1] <= 5;
-            else if (mem_rd)
-                r_led[4:1] <= 6;
-            else if (mem_wr)
-                r_led[4:1] <= 7;
 
-        end
-        if (counter > 0)
-            counter <= counter - 1;
+            // pause
+            // writes
+            if (mem_wr) begin
+                r_led[3:0] <= 6;
+                r_led[7:4] <= mem_be;
+                mem[addr]  <= d_in;
+            end
+            if (reg_wr) begin
+                r_led[3:0] <= 5;
+                if (addr != 0)
+                    rf[addr] <= d_in;
+            end
+
+            // reads
+            if (mem_rd) begin
+                r_led[3:0] <= 4;
+                r_led[7:4] <= mem_be;
+                r_d_rd     <= mem[addr];
+            end
+
+            if (reg_rd) begin
+                r_led[3:0] <= 3;
+                r_d_rd     <= rf[addr];
+            end
+
+            // pause
+            if (pause) begin
+                r_led[3:0] <= 1;
+                r_led[11]  <= 1;
+                paused     <= 1;
+            end
+
+            // resume
+            else if (resume) begin
+                r_led[3:0] <= 2;
+                r_led[11]  <= 0;
+                paused     <= 0;
+            end
+
+        end // if (valid)
+
+        // increment various counters
+        if(!paused) begin
+            r_led[15:12] <= pc_counter;
+            if (delay_counter == 5000000) begin
+                pc_counter    <= pc_counter + 4;
+                delay_counter <= 0;
+            end
+            else
+                delay_counter <= delay_counter + 1;
+        end // if (!paused)
+        if (busy_counter > 0)
+            busy_counter <= busy_counter - 1;
+
     end // always_ff
 
-endmodule // serial_hw_testbench
+endmodule // db_wrapper

@@ -1,7 +1,5 @@
 #include "cli.h"
-
-#define match_strs(s, m1, m2)                                                  \
-    ((strcasecmp(s, m1) == 0) || (strcasecmp(s, m2) == 0))
+#include "util.h"
 
 // Array of breakpoints (also should be tracked in the module)
 // -1 = none
@@ -12,21 +10,6 @@ unsigned int n_bps = 0;
 
 // keeps track of pause state
 int paused = 0;
-
-// parse an int in the form 0xNNN..., 0XNNN... or NNN...
-int parse_int(char *str) {
-    char prefix[3];
-    memcpy(prefix, str, 2);
-    prefix[2] = 0;
-
-    // hex formatted
-    if (match_strs(prefix, "0x", "0X")) {
-        return (word_t)strtol(str, NULL, 0);
-    }
-    // decimal formatted
-       else
-        return atoi(str);
-}
 
 // just print a message
 void unrecognized_cmd(char *line) {

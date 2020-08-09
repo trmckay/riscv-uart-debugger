@@ -8,7 +8,6 @@
 //     https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html
 
 #include "serial.h"
-#include "cli.h"
 
 term_sa saved_attributes;
 
