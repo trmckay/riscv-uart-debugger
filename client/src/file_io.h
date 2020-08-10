@@ -1,6 +1,7 @@
 #ifndef FILE_IO_H
 #define FILE_IO_H
 
+#include "types.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -13,6 +14,6 @@
 #include <unistd.h>
 
 int open_file(char *path, off_t *num_words);
-int read_word_file(int file, uint32_t *w);
+int read_word_file(int file, word_t *w);
 
 #endif

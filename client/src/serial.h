@@ -1,6 +1,7 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include "types.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -16,7 +17,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-typedef unsigned char byte_t;
 typedef struct termios term_sa;
 
 #define EQUAL 0
@@ -25,15 +25,15 @@ typedef struct termios term_sa;
 
 // Serial parameters
 // Make sure these agree with the target
-#define TIMEOUT_MSEC 5000
+#define TIMEOUT_MSEC 50
 #define BAUD B115200
-#define INTER_BYTE_TIMEOUT 20
+#define INTER_BYTE_TIMEOUT 5
 #define MIN_BYTES 4
 #define BYTES_PER_SEND 4
 #define BYTES_PER_RCV 4
 
 int open_serial(char *path, int *serial_port);
-int send_word(int serial_port, uint32_t w);
-int read_word(int serial_port, uint32_t *w);
+int send_word(int serial_port, word_t w);
+int read_word(int serial_port, word_t *w);
 
 #endif

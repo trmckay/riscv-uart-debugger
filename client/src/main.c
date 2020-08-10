@@ -2,7 +2,14 @@
 #include "serial.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+// TODO:
+// This file desparately needs to be refactored and cleaned.
+// The UI leading up to the launch of the actual debugger could
+// use some improvement as well.
+//
+// Also, the port should probably be initialized with some sort of structure
+// instead of globals.
 
 void usage(char *msg);
 void parse_args(int argc, char *argv[], char **path);
@@ -44,7 +51,7 @@ void parse_args(int argc, char *argv[], char **path) {
     if (argc == 1) {
         printf("Autodetect serial ports in '/dev/'? ");
         char *line = readline("[y/N]: ");
-        if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0) {
+        if (strcasecmp(line, "y") == 0) {
             autodetect();
             exit(EXIT_SUCCESS);
         } else {
@@ -77,15 +84,6 @@ void start(char *path) {
     // launch debug cli on device at serial_port
     debug_cli(path, serial_port);
     restore_term(serial_port);
-}
-
-int starts_with(char *cmp, char *str) {
-    int l = strlen(str);
-    for (int i = 0; i < l; i++) {
-        if (cmp[i] != str[i])
-            return 0;
-    }
-    return 1;
 }
 
 int poll(char *path) {
@@ -123,16 +121,15 @@ void autodetect() {
         closedir(dir);
     } else
         perror("");
-    fprintf(
-        stderr,
-        RED "\nError: autodetection failed\n\n" RESET
-        "Note: Often times, devices will be inaccessible without first modifying permissions.\n"
-        "You can grant access yourself with:\n"
-        "\n    sudo chmod o+rw <device>\n\n"
-        "Or, you can run the program as superuser.\n");
-    
+    fprintf(stderr, RED "\nError: autodetection failed\n\n" RESET
+                        "Note: Often times, devices will be inaccessible "
+                        "without first modifying permissions.\n"
+                        "You can grant access yourself with:\n"
+                        "\n    sudo chmod o+rw <device>\n\n"
+                        "Or, you can run the program as superuser.\n");
+
     char *line = readline("\nProceed with a different device? [y/N]: ");
-    if (strcmp(line, "Y") == 0 || strcmp(line, "y") == 0)
+    if (strcasecmp(line, "y") == 0)
         retry();
     else
         exit(EXIT_FAILURE);

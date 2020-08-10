@@ -1,0 +1,9 @@
+============ v1.1 ============
+- Add byte enable signal
+- Add some extra info to the docs
+- Lots of code comments
+- Rewrite testbench
+
+============ v1.0 ============
+
+- Initial release

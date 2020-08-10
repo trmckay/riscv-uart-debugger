@@ -3,7 +3,7 @@
 ### About ###
 Control and debug a RISC-V MCU over USB UART.
 
-Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the serial\_driver instantiation in module/design/mcu\_controller.sv.
+Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the BAUD/CLK_RATE parameters of the mcu_controller module.
 
 ### Installation ###
 
@@ -16,10 +16,12 @@ cd riscv-uart-debugger
 ```
 
 ### Usage ###
-Launch the tool with
+Launch the tool with:
 ```
 uart-db <device>
 ```
+Or to autodetect ports, omit the device.
+
 Your device is likely connected to /dev/ttyUSBX or /dev/ttySX.
 Once in the tool, type 'h' or 'help' for more information.
 
@@ -49,49 +51,4 @@ Build and install client:
 cd client
 make
 sudo make install
-```
-
-### Project Structure ###
-```
-.
-├── client
-│   ├── Makefile
-│   └── src
-│       ├── cli.c
-│       ├── cli.h
-│       ├── debug.c
-│       ├── debug.h
-│       ├── file_io.c
-│       ├── file_io.h
-│       ├── main.c
-│       ├── serial.c
-│       └── serial.h
-├── doc
-│   ├── Makefile
-│   └── tex
-│       ├── figures
-│       │   ├── blackbox.png
-│       │   └── blackbox.xml
-│       └── protocol.tex
-├── install
-├── Makefile
-├── module
-│   ├── design
-│   │   ├── controller_fsm.sv
-│   │   ├── mcu_controller.sv
-│   │   ├── serial_driver.sv
-│   │   ├── uart_rx.sv
-│   │   ├── uart_rx_word.sv
-│   │   ├── uart_tx.sv
-│   │   └── uart_tx_word.sv
-│   └── testbench
-│       ├── constraints
-│       │   └── db_wrapper_basys3.xdc
-│       ├── db_wrapper.sv
-│       └── sseg.sv
-├── open-ports
-├── readme.md
-└── update
-
-9 directories, 29 files
 ```

@@ -8,7 +8,6 @@
 //     https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html
 
 #include "serial.h"
-#include "cli.h"
 
 term_sa saved_attributes;
 
@@ -31,9 +30,10 @@ term_sa saved_attributes;
 void restore_term(int serial_port) {
     printf("Restoring serial port settings... ");
     tcsetattr(serial_port, TCSANOW, &saved_attributes);
-    fprintf(stderr, "closing port... ");
+    printf("restored\n");
+    printf("Closing port... ");
     close(serial_port);
-    fprintf(stderr, "closed\n");
+    printf("closed\n");
 }
 
 int open_serial(char *path, int *serial_port) {
@@ -51,7 +51,7 @@ int open_serial(char *path, int *serial_port) {
         fprintf(stderr, "Error: file is not a terminal\n");
         return 2;
     }
-    
+
     /* Save the terminal attributes so we can restore them later. */
     printf("Reading terminal attributes and saving for restore...");
     tcgetattr(*serial_port, &saved_attributes);
@@ -79,7 +79,8 @@ int open_serial(char *path, int *serial_port) {
     return 0;
 }
 
-int send_word(int serial_port, uint32_t w) {
+// send a word to the device and return 0 if successful
+int send_word(int serial_port, word_t w) {
     ssize_t bw;
     w = htonl(w);
 
@@ -97,8 +98,9 @@ int send_word(int serial_port, uint32_t w) {
     return 0;
 }
 
-int recv_word(int serial_port, uint32_t *word) {
-    uint32_t w;
+// read a word from the device and return 0 if successful
+int recv_word(int serial_port, word_t *word) {
+    word_t w;
     ssize_t br;
     w = 0;
 
@@ -118,6 +120,7 @@ int recv_word(int serial_port, uint32_t *word) {
     return 0;
 }
 
+// wait for a readable byte until timeout
 int wait_readable(int serial_port, int msec) {
     int r;
     fd_set set;
@@ -138,8 +141,11 @@ int wait_readable(int serial_port, int msec) {
     return FD_ISSET(serial_port, &set);
 }
 
-int read_word(int serial_port, uint32_t *word) {
-    uint32_t r;
+// read a word after the specified timeout
+// if it's not ready yet, the read fails
+// return 0 on success
+int read_word(int serial_port, word_t *word) {
+    word_t r;
     if (wait_readable(serial_port, TIMEOUT_MSEC)) {
         recv_word(serial_port, &r);
         *word = r;

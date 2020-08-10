@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Engineer: Keefe Johnson
 // Minor changes by Trevor McKay
-// 
+//
 // Create Date: 03/18/2019 09:21:15 PM
 // Module Name: uart_tx_word
 //
@@ -26,7 +26,7 @@ module uart_tx_word #(
     enum {
         IDLE,
         WAIT_START,
-        INIT_TX_BYTE, 
+        INIT_TX_BYTE,
         WAIT_TX_BYTE
     } state = IDLE;
 
@@ -90,5 +90,5 @@ module uart_tx_word #(
             endcase
         end
     end
-    
+
 endmodule

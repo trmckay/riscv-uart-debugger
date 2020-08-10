@@ -2,6 +2,7 @@
 #define CLI_H
 
 #include "debug.h"
+#include "util.h"
 #include "serial.h"
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -12,8 +13,8 @@
 #include <string.h>
 #include <strings.h>
 
-#define VERDATE "2020-08-05"
-#define VERSION "v1.0"
+#define VERDATE "2020-08-08"
+#define VERSION "v1.1"
 
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
@@ -22,6 +23,8 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
+
+#define MAX_BREAK_PTS 8
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
