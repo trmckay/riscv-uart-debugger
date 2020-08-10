@@ -3,10 +3,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Engineer: Keefe Johnson
 // Minor changes by Trevor McKay
-// 
+//
 // Create Date: 03/18/2019 09:21:15 PM
 // Module Name: uart_rx_word
-// 
+//
 // Dependencies: uart_rx.sv
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -32,7 +32,7 @@ module uart_rx_word #(
 
     logic [$clog2(TIMEOUT_CLKS+1)-1:0] timeout_counter = 0;
     logic [1:0] num_bytes_recvd = 0;
-    logic [23:0] r_rx_bytes = 0;  // shift first 3 bytes into here 
+    logic [23:0] r_rx_bytes = 0;  // shift first 3 bytes into here
     logic [31:0] r_rx_word = 0;  // but don't change output until full word
 
     wire rx_byte_ready;
@@ -44,10 +44,10 @@ module uart_rx_word #(
         .o_Rx_DV(rx_byte_ready),
         .o_Rx_Byte(rx_byte)
     );
-    
+
     assign rx_word = r_rx_word;
     assign ready = (state == OUTPUT_WORD);
-                
+
     always_ff @(posedge clk) begin
         if (rst) begin
             state <= WAIT_RX_BYTE;
@@ -62,7 +62,7 @@ module uart_rx_word #(
                     if (rx_byte_ready) begin
                         if (num_bytes_recvd == 3) begin  // just received 4th byte
                             r_rx_word <= {r_rx_bytes, rx_byte};  // big-endian
-                            num_bytes_recvd <= 0; 
+                            num_bytes_recvd <= 0;
                             state <= OUTPUT_WORD;
                         end
                         else begin

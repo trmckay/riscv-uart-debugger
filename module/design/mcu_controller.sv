@@ -3,11 +3,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Company: Cal Poly, SLO
 // Engineer: Trevor McKay
-// 
+//
 // Module Name: Otter General Purpose Controller (OGPC)
 // Description: Hardware module to add support for remote debugging, programming,
 // etc. via low-level control of a target MCU.
-// 
+//
 // Version: v1.1
 //
 // Revision  0.01 - File Created
@@ -73,14 +73,14 @@ module mcu_controller #(
         .ctrlr_busy(l_ctrlr_busy),
         .d_rd(d_rd),
         .error(error),
-        
+
         .stx(stx),
         .cmd(l_cmd),
         .addr(l_addr),
         .d_in(d_in),
         .out_valid(l_serial_valid)
     );
-    
+
     controller_fsm fsm(
         .clk(clk),
         .cmd(l_cmd),
@@ -100,5 +100,5 @@ module mcu_controller #(
         .out_valid(valid),
         .ctrlr_busy(l_ctrlr_busy)
     );
-    
+
 endmodule // module mcu_controller
