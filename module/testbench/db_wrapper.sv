@@ -94,26 +94,26 @@ module db_wrapper #(
                 r_led[7:4] <= mem_be;
                 mem[addr]  <= d_in;
             end
-            if (reg_wr) begin
+            else if (reg_wr) begin
                 r_led[3:0] <= 5;
                 if (addr != 0)
                     rf[addr] <= d_in;
             end
 
             // reads
-            if (mem_rd) begin
+            else if (mem_rd) begin
                 r_led[3:0] <= 4;
                 r_led[7:4] <= mem_be;
                 r_d_rd     <= mem[addr];
             end
 
-            if (reg_rd) begin
+            else if (reg_rd) begin
                 r_led[3:0] <= 3;
                 r_d_rd     <= rf[addr];
             end
 
             // pause
-            if (pause) begin
+            else if (pause) begin
                 r_led[3:0] <= 1;
                 r_led[11]  <= 1;
                 paused     <= 1;
@@ -131,8 +131,8 @@ module db_wrapper #(
         // increment various counters
         if(!paused) begin
             r_led[15:12] <= pc_counter;
-            if (delay_counter == 5000000) begin
-                pc_counter    <= pc_counter + 4;
+            if (delay_counter == 25000000) begin
+                pc_counter    <= pc_counter + 1;
                 delay_counter <= 0;
             end
             else

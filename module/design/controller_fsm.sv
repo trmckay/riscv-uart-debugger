@@ -42,12 +42,11 @@ module controller_fsm(
     logic l_mcu_paused_in;
 
     // breakpoints
-    logic [31:0] break_pts[MAX_BREAK_PTS];
-    initial
-        for (int i = 0; i < MAX_BREAK_PTS; i++)
-            break_pts[i] = 'Z;
+    logic [32:0] break_pts[MAX_BREAK_PTS];
+    initial for (int i = 0; i < MAX_BREAK_PTS; i++)
+        break_pts[i] = 0;
     reg [$clog2(MAX_BREAK_PTS)-1:0] r_num_break_pts = 0;
-    logic l_bp_add, l_hit;
+    logic l_bp_add, l_bp_rm;
 
     localparam FN_NONE         = 4'h0;
     localparam FN_PAUSE        = 4'h1;
@@ -73,8 +72,7 @@ module controller_fsm(
         S_WAIT_MEM_WR,
         S_WAIT_REG_RD,
         S_WAIT_REG_WR,
-        S_WAIT_STEP,
-        S_BREAK_HIT
+        S_WAIT_STEP
     } STATE;
 
     STATE r_ps = S_IDLE, l_ns;
@@ -83,66 +81,63 @@ module controller_fsm(
         // update paused state
         r_mcu_paused <= l_mcu_paused_in;
 
-        // compare pc to all breakpoints
-        l_hit = 0;
-        if (!r_mcu_paused) begin
-            for (int i = 0; i < MAX_BREAK_PTS; i++) begin
-                if ((pc + 4) == break_pts[i]) begin
-                    r_ps <= S_BREAK_HIT;
-                    l_hit = 1;
-                end
-            end
-        end
-        if (!l_hit) r_ps <= l_ns;
+        // next state
+        r_ps <= l_ns;
 
         // load in new breakpoints
         if (l_bp_add) begin
-            break_pts[r_num_break_pts] <= addr;
-            r_num_break_pts <= r_num_break_pts + 1;
+            // load into first available spot, mimics client algo
+            for (int i = 0; i < MAX_BREAK_PTS; i++) begin
+                if (break_pts[i][32] == 0) begin
+                    break_pts[i][31:0] <= addr;
+                    break_pts[i][32:0] <= 1'b1;
+                    break;
+                end
+            end
+        end
+        // set MSB to 0 to indicate unused
+        if (l_bp_rm) begin
+            break_pts[addr][32] <= 0;
         end
     end // always_ff @(posedge clk)
 
     always_comb begin
-        pause = 0;
-        reset = 0;
-        resume = 0;
-        l_bp_add = 0;
-        reg_rd = 0;
-        reg_wr = 0;
-        mem_rd = 0;
-        mem_wr = 0;
-        mem_be = 0;
-        l_ns  = S_IDLE;
 
-        /* controller will output no commands and
-        * accept no input in its default state */
-
-        // output is invalid unless specified
-        out_valid = 0;
-        // busy unless specified
-        ctrlr_busy = 1;
-
-        // keep these values by default
+        // defaults
+        pause           = 0;
+        reset           = 0;
+        resume          = 0;
+        reg_rd          = 0;
+        reg_wr          = 0;
+        mem_rd          = 0;
+        mem_wr          = 0;
+        mem_be          = 0;
+        out_valid       = 0;
+        ctrlr_busy      = 1;
+        l_bp_add        = 0;
+        l_bp_rm         = 0;
         l_mcu_paused_in = r_mcu_paused;
+        l_ns            = S_IDLE;
 
         case(r_ps)
-
             S_IDLE: begin
-                // check for valid from sdec high
+                // check for valid from serial high
                 if (in_valid) begin
+                    // issue relevent command
                     case(cmd)
                         FN_PAUSE: begin
                             pause = 1;
                             out_valid = 1;
+                            l_mcu_paused_in = 1;
                             l_ns = S_WAIT_PAUSE;
                         end
                         FN_RESUME: begin
                             resume = 1;
                             out_valid = 1;
+                            l_mcu_paused_in = 0;
                             l_ns = S_WAIT_RESUME;
                         end
                         FN_STEP: begin
-                            // step only supported if MCU is paused
                             if (r_mcu_paused) begin
                                 resume = 1;
                                 out_valid = 1;
@@ -156,6 +151,10 @@ module controller_fsm(
                         FN_BR_PT_ADD: begin
                             ctrlr_busy = 0;
                             l_bp_add = 1;
+                            l_ns = S_IDLE;
+                        end
+                        FN_BR_PT_RM: begin
+                            l_bp_rm  = 1;
                             l_ns = S_IDLE;
                         end
                         FN_MEM_RD_WORD: begin
@@ -192,38 +191,35 @@ module controller_fsm(
                             out_valid = 1;
                             l_ns = S_WAIT_REG_WR;
                         end
-                    endcase // case(debug_fn)
-                end
-                // no command given, stay idle
+                    endcase // case(cmd)
+                end // if (in_valid)
+
+                // stay in idle, indicate not busy
                 else begin
                     ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_IDLE
 
             S_WAIT_PAUSE: begin
+                pause = 1;
                 if (mcu_busy) begin
-                    pause = 1;
                     l_ns = S_WAIT_PAUSE;
                 end
                 else begin
-                    l_mcu_paused_in = 1;
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_PAUSE
 
             S_WAIT_RESUME: begin
+                resume = 1;
                 if (mcu_busy) begin
-                    resume = 1;
                     l_ns = S_WAIT_RESUME;
                 end
                 else begin
-                    l_mcu_paused_in = 0;
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_RESUME
 
             S_WAIT_STEP: begin
                 out_valid = 1;
@@ -237,7 +233,7 @@ module controller_fsm(
                     pause = 1;
                     l_ns = S_WAIT_PAUSE;
                 end
-            end
+            end // S_WAIT_STEP
 
             S_WAIT_MEM_RD: begin
                 if (mcu_busy) begin
@@ -246,10 +242,9 @@ module controller_fsm(
                     l_ns = S_WAIT_MEM_RD;
                 end
                 else begin
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_MEM_RD
 
             S_WAIT_MEM_WR: begin
                 if (mcu_busy) begin
@@ -258,10 +253,9 @@ module controller_fsm(
                     l_ns = S_WAIT_MEM_RD;
                 end
                 else begin
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_MEM_WR
 
             S_WAIT_REG_RD: begin
                 if (mcu_busy) begin
@@ -269,10 +263,9 @@ module controller_fsm(
                     l_ns = S_WAIT_REG_RD;
                 end
                 else begin
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_REG_RD
 
             S_WAIT_REG_WR: begin
                 if (mcu_busy) begin
@@ -280,21 +273,14 @@ module controller_fsm(
                     l_ns = S_WAIT_REG_WR;
                 end
                 else begin
-                    ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
-            end
+            end // S_WAIT_REG_WR
 
-            S_BREAK_HIT: begin
-                pause = 1;
-                out_valid = 1;
-                l_ns = S_WAIT_PAUSE;
-            end
+            default:
+                l_ns = S_IDLE;
 
-            default: l_ns = S_IDLE;
         endcase // case(r_ps)
-
     end // always_comb
-
 endmodule // module controller_fsm
 
