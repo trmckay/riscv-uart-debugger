@@ -35,19 +35,7 @@ module controller_fsm(
     output logic ctrlr_busy
 );
 
-    localparam MAX_BREAK_PTS = 8;
-
-    // keep track of mcu state
-    reg r_mcu_paused = 0;
-    logic l_mcu_paused_in;
-
-    // breakpoints
-    logic [32:0] break_pts[MAX_BREAK_PTS];
-    initial for (int i = 0; i < MAX_BREAK_PTS; i++)
-        break_pts[i] = 0;
-    reg [$clog2(MAX_BREAK_PTS)-1:0] r_num_break_pts = 0;
-    logic l_bp_add, l_bp_rm;
-
+    // command codes
     localparam FN_NONE         = 4'h0;
     localparam FN_PAUSE        = 4'h1;
     localparam FN_RESUME       = 4'h2;
@@ -63,6 +51,19 @@ module controller_fsm(
     localparam FN_MEM_WR_WORD  = 4'hC;
     localparam FN_REG_WR       = 4'hD;
 
+    // keep track of mcu paused state
+    reg r_mcu_paused = 0;
+    logic l_mcu_paused_in;
+
+    // breakpoints
+    localparam MAX_BREAK_PTS = 8;
+    // [32]=valid; [31:0]=pc
+    logic [32:0] break_pts[MAX_BREAK_PTS];
+    initial for (int i = 0; i < MAX_BREAK_PTS; i++)
+        break_pts[i] = 0;
+    logic l_bp_add, l_bp_rm, l_bp_hit, l_bp_en;
+    reg r_bp_en = 1;
+
     // states for controller
     typedef enum logic [3:0] {
         S_IDLE,
@@ -75,6 +76,7 @@ module controller_fsm(
         S_WAIT_STEP
     } STATE;
 
+    // start in idle
     STATE r_ps = S_IDLE, l_ns;
 
     always_ff @(posedge clk) begin
@@ -86,11 +88,11 @@ module controller_fsm(
 
         // load in new breakpoints
         if (l_bp_add) begin
-            // load into first available spot, mimics client algo
+            // load into first available slot, mimics client algo
             for (int i = 0; i < MAX_BREAK_PTS; i++) begin
                 if (break_pts[i][32] == 0) begin
                     break_pts[i][31:0] <= addr;
-                    break_pts[i][32:0] <= 1'b1;
+                    break_pts[i][32]   <= 1'b1;
                     break;
                 end
             end
@@ -99,6 +101,7 @@ module controller_fsm(
         if (l_bp_rm) begin
             break_pts[addr][32] <= 0;
         end
+        r_bp_en <= l_bp_en;
     end // always_ff @(posedge clk)
 
     always_comb begin
@@ -116,8 +119,16 @@ module controller_fsm(
         ctrlr_busy      = 1;
         l_bp_add        = 0;
         l_bp_rm         = 0;
+        l_bp_hit        = 0;
+        l_bp_en         = r_bp_en;
         l_mcu_paused_in = r_mcu_paused;
         l_ns            = S_IDLE;
+
+        // watch for breakpoints
+        for (int i = 0; i < MAX_BREAK_PTS; i++) begin
+            if ((break_pts[i][32] == 1) && (break_pts[i][31:0] == pc))
+                l_bp_hit = 1;
+        end
 
         case(r_ps)
             S_IDLE: begin
@@ -134,19 +145,17 @@ module controller_fsm(
                         FN_RESUME: begin
                             resume = 1;
                             out_valid = 1;
-                            l_mcu_paused_in = 0;
                             l_ns = S_WAIT_RESUME;
                         end
+                        FN_RESET: begin
+                            reset = 1;
+                            out_valid = 1;
+                            l_ns = S_IDLE;
+                        end
                         FN_STEP: begin
-                            if (r_mcu_paused) begin
-                                resume = 1;
-                                out_valid = 1;
-                                l_ns = S_WAIT_STEP;
-                               end
-                            else begin
-                                ctrlr_busy = 0;
-                                l_ns = S_IDLE;
-                            end
+                            resume = 1;
+                            out_valid = 1;
+                            l_ns = S_WAIT_STEP;
                         end
                         FN_BR_PT_ADD: begin
                             ctrlr_busy = 0;
@@ -199,10 +208,23 @@ module controller_fsm(
                     ctrlr_busy = 0;
                     l_ns = S_IDLE;
                 end
+
+                if (!r_mcu_paused && l_bp_hit && r_bp_en)
+                begin
+                    // issue a pause
+                    pause = 1;
+                    out_valid = 1;
+                    // save paused state early
+                    l_mcu_paused_in = 1;
+                    // disable breakpoints
+                    l_bp_en = 0;
+                    l_ns = S_WAIT_PAUSE;
+                end
             end // S_IDLE
 
             S_WAIT_PAUSE: begin
                 pause = 1;
+                l_bp_en = 0;
                 if (mcu_busy) begin
                     l_ns = S_WAIT_PAUSE;
                 end
@@ -215,22 +237,28 @@ module controller_fsm(
                 resume = 1;
                 if (mcu_busy) begin
                     l_ns = S_WAIT_RESUME;
+                    out_valid = 1;
                 end
                 else begin
+                    l_mcu_paused_in = 0;
+                    l_bp_en = 1;
                     l_ns = S_IDLE;
                 end
             end // S_WAIT_RESUME
 
             S_WAIT_STEP: begin
-                out_valid = 1;
                 // wait for resume
                 if (mcu_busy) begin
                     resume = 1;
                     l_ns = S_WAIT_STEP;
                 end
-                // pause on next cycle
+                // use r_mcu_paused to wait one cycle of execute
+                else if (!r_mcu_paused) begin
+                    l_mcu_paused_in = 0;
+                end
                 else begin
                     pause = 1;
+                    out_valid = 1;
                     l_ns = S_WAIT_PAUSE;
                 end
             end // S_WAIT_STEP
@@ -283,4 +311,3 @@ module controller_fsm(
         endcase // case(r_ps)
     end // always_comb
 endmodule // module controller_fsm
-

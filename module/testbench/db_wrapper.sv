@@ -27,8 +27,6 @@ module db_wrapper #(
                  d_rd,
                  word;
     reg          paused = 0;
-    reg   [4:0]  pc_counter;
-    reg   [15:0] r_led = 0;
     reg   [31:0] pc,
                  r_addr,
                  r_d_in,
@@ -37,10 +35,9 @@ module db_wrapper #(
     reg   [31:0] mem[MEM_SIZE];
     reg   [31:0] rf[RF_SIZE];
 
-    assign led  = r_led;
+    assign led  = pc[31:16];
     assign busy = valid || (busy_counter > 0);
     assign d_rd = r_d_rd;
-    assign pc   = {28'b0, pc_counter};
 
     mcu_controller #(
         .CLK_RATE(CLK_RATE),
@@ -87,56 +84,44 @@ module db_wrapper #(
             r_d_in <= d_in;
             r_addr <= addr;
 
-            // pause
+            // reset
+            if (reset) begin
+                pc <= 0;
+                paused <= 0;
+            end
+
             // writes
             if (mem_wr) begin
-                r_led[3:0] <= 6;
-                r_led[7:4] <= mem_be;
                 mem[addr]  <= d_in;
             end
             else if (reg_wr) begin
-                r_led[3:0] <= 5;
                 if (addr != 0)
                     rf[addr] <= d_in;
             end
 
             // reads
             else if (mem_rd) begin
-                r_led[3:0] <= 4;
-                r_led[7:4] <= mem_be;
                 r_d_rd     <= mem[addr];
             end
-
             else if (reg_rd) begin
-                r_led[3:0] <= 3;
                 r_d_rd     <= rf[addr];
             end
 
             // pause
             else if (pause) begin
-                r_led[3:0] <= 1;
-                r_led[11]  <= 1;
                 paused     <= 1;
             end
 
             // resume
             else if (resume) begin
-                r_led[3:0] <= 2;
-                r_led[11]  <= 0;
                 paused     <= 0;
             end
 
         end // if (valid)
 
         // increment various counters
-        if(!paused) begin
-            r_led[15:12] <= pc_counter;
-            if (delay_counter == 25000000) begin
-                pc_counter    <= pc_counter + 1;
-                delay_counter <= 0;
-            end
-            else
-                delay_counter <= delay_counter + 1;
+        if(!paused || (valid && resume)) begin
+            pc <= pc + 4;
         end // if (!paused)
         if (busy_counter > 0)
             busy_counter <= busy_counter - 1;
