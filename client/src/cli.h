@@ -24,6 +24,8 @@
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
 
+#define MAX_BREAK_PTS 8
+
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
 

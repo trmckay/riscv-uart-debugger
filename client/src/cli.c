@@ -5,8 +5,7 @@
 // -1 = none
 // positive int = PC of breakpoint
 // only hardware breakpoints are supported right now
-int64_t bps[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
-unsigned int n_bps = 0;
+int64_t bps[MAX_BREAK_PTS] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
 // keeps track of pause state
 int paused = 0;
@@ -158,7 +157,7 @@ int parse_cmd(char *line, int serial_port) {
         }
         a1 = parse_int(s_a1);
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] < 0) {
                 bps[i] = a1;
                 printf("Add breakpoint %d @ pc = 0x%08X\n", i, a1);
@@ -176,7 +175,7 @@ int parse_cmd(char *line, int serial_port) {
             return 1;
         }
         a1 = parse_int(s_a1);
-        if (bps[a1] >= 0) {
+        if (a1 < MAX_BREAK_PTS && bps[a1] >= 0) {
             printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)bps[a1]);
             int err = mcu_rm_breakpoint(serial_port, bps[a1]);
             bps[a1] = -1;
@@ -187,11 +186,25 @@ int parse_cmd(char *line, int serial_port) {
         }
     }
 
+    // clear breakpoints
+    if (match_strs(cmd, "bc", "clear")) {
+        printf("Clear breakpoints\n");
+        for (int i = 0; i < MAX_BREAK_PTS; i++) {
+            if (bps[i] >= 0) {
+                printf("Delete breakpoint %d @ pc = 0x%08X\n", i, (word_t)bps[i]);
+                if (mcu_rm_breakpoint(serial_port, bps[i]))
+                    return 1;
+                bps[i] = -1;
+            }
+        }
+        return 0;
+    }
+
     // list breakpoints
     if (match_strs(cmd, "bl", "list")) {
         printf("List breakpoints\n");
         printf("NUM  |  PC\n");
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] > 0)
                 printf(" %d   |  0x%08X\n", i, (word_t)bps[i]);
         }

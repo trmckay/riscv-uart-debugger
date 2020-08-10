@@ -281,7 +281,7 @@ int mcu_mem_read_word(int serial_port, word_t addr, word_t *data) {
 
 int mcu_program(int serial_port, char *path) {
     off_t n;
-    word_t w, addr = 0x0;
+    word_t w;
     int f;
 
     if ((f = open_file(path, &n)) == -1) {
@@ -292,9 +292,8 @@ int mcu_program(int serial_port, char *path) {
         fprintf(stderr, "Progress: %.1f%%\r", (float)i * 100 / n);
         if (read_word_file(f, &w))
             return 1;
-        if (mcu_mem_write_word(serial_port, addr, w))
+        if (mcu_mem_write_word(serial_port, (i*WORD_SIZE), w))
             return 1;
-        addr += 0x4;
     }
     printf("\nProgramming successful!\n");
     return 0;

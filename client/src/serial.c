@@ -30,9 +30,10 @@ term_sa saved_attributes;
 void restore_term(int serial_port) {
     printf("Restoring serial port settings... ");
     tcsetattr(serial_port, TCSANOW, &saved_attributes);
-    fprintf(stderr, "closing port... ");
+    printf("restored\n");
+    printf("Closing port... ");
     close(serial_port);
-    fprintf(stderr, "closed\n");
+    printf("closed\n");
 }
 
 int open_serial(char *path, int *serial_port) {
