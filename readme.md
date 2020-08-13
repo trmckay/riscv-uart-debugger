@@ -11,8 +11,8 @@ The best way is to build and install from source:
 
 ```
 git clone git@github.com:trmckay/riscv-uart-debugger.git
-cd riscv-uart-debugger
-./install
+cd riscv-uart-debugger/client
+./INSTALL
 ```
 
 ### Usage ###
