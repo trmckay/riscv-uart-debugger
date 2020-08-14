@@ -8,7 +8,7 @@
 // Description: Hardware module to add support for remote debugging, programming,
 // etc. via low-level control of a target MCU.
 //
-// Version: v1.2
+// Version: v1.3
 //
 // Revision  0.01 - File Created
 // Revision  0.10 - Controller first rev.
@@ -17,6 +17,7 @@
 // Revision  0.50 - Tentative working
 // Revision  1.0  - Tested, working
 // Revision  1.1  - Exchange mem_rw_byte for byte mask, parameters
+// Revision  1.2  - byte mask -> mem_size, fast programming
 //
 // TODO:
 //   - serial decoder
