@@ -1,0 +1,5 @@
+#!/bin/bash
+
+find /dev -name "ttyS*" -or -name "ttyUSB*" | while read line; do
+    sudo chmod o+rw $line
+done
