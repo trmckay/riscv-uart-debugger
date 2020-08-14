@@ -8,17 +8,18 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
 
-\title{Pipeline control protocol}
+\title{RISC-V UART Debugger Protocol}
 \author{Trevor McKay}
-\date{Summer 2020}
+\date{August 2020}
 
 \graphicspath{{./figures/}}
 
 \begin{document}
 
-\begin{center}
-    \Large\textbf{RISC-V UART Debugger\\Implementation and Protocol}
-\end{center}
+\maketitle
+\tableofcontents
+
+\newpage
 
 \section{Overview}
 
@@ -41,7 +42,7 @@ protocol.
 The module connects to the MCU, register file, and memory. Commands are recieved via serial
 and decoded within the module. The signals \emph{rf\_wr}, \emph{rf\_rd}, \emph{addr}, and
 \emph{d\_in} connect to the register file for reads and writes. The \emph{mem\_wr},
-\emph{mem\_rd}, \emph{mem\_be}, \emph{addr}, and \emph{d\_in} connect to the memory
+\emph{mem\_rd}, \emph{mem\_size}, \emph{addr}, and \emph{d\_in} connect to the memory
 for reads and writes. Additionally, \emph{resume}, \emph{pause}, and \emph{reset} control
 the flow of the MCU\@. Finally, the \emph{valid} signal determines wether or not the controller
 is issuing a command.
@@ -89,15 +90,6 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
     The program counter should be set to zero. It is worth noting that this only resets the point of
     execution, not the contents of memory.
 
-    \item\textbf{mem\_be}\\
-    This signal will be driven high at the same time as \emph{mem\_rd} or \emph{mem\_wr}. It acts as
-    a bitmask for selecting bytes from a word. For example, if writing to address 0x14 with
-    \emph{mem\_be} as $1111_{2}$, the whole word should be written (addresses 0x14--0x17).
-    Reads and writes can be performed at the byte level by using the
-    bitmask. For example, accessing word 0x14 with \emph{mem\_be} as $0010_{2}$ will
-    only write the third byte in the word (address 0x16).
-
-    \newpage
     \item\textbf{mem\_rd}\\
     The MCU should read the memory at \emph{addr}. The \emph{mcu\_busy} should go
      high at or before the next positive clock edge until the memory read is complete. The
@@ -116,6 +108,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
                valid:  ________|¯|________________________
         \end{verbatim}
 
+    \newpage
     \item\textbf{mem\_wr}\\
     The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy}
     should go high at or before the next positive clock edge until the memory write is complete.
@@ -172,6 +165,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
 
 \end{enumerate}
 
+\newpage
 \section{Implementation suggestions}
 There is no right or wrong way to implement this protocol, as long as the MCU responds correctly.
 However, there are some ways to make this easier.
