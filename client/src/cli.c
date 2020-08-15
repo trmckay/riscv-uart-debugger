@@ -1,5 +1,4 @@
 #include "cli.h"
-#include "util.h"
 
 // Array of breakpoints (also should be tracked in the module)
 // -1 = none
@@ -22,36 +21,7 @@ void unrecognized_cmd(char *line) {
 
 // long-form help message
 void help() {
-    printf("============================ ABOUT "
-           "====================================\n"
-           "Version: %s, Date: %s\n",
-           VERSION, VERDATE);
-    printf("Author: Trevor McKay\n"
-           "Please send bugs to trmckay@calpoly.edu\n\n");
-    printf("============================ USAGE "
-           "====================================\n"
-           "Run with 'uart-db <device> to connect to a specific target.\n"
-           "Run with no arguments to autodetect a target.\n"
-           "Type a command and its arguments, then press enter to execute.\n"
-           "You can also execute external shell commands by escaping them with "
-           "'!'.\n\n"
-           "======================= LIST OF COMMANDS "
-           "==============================\n"
-           "                 'h': view this message\n"
-           "                 'p': pause execution\n"
-           "                 'r': resume execution\n"
-           "     'pr <prog.bin>': program with the specified binary file\n"
-           "                'rs': reset execution\n"
-           "                'st': request MCU status\n"
-           "            'b <pc>': add a breakpoint to the specified program "
-           "counter\n"
-           "           'd <num>': delete the specified breakpoint\n"
-           "                'bl': list breakpoints\n"
-           "          'rr <num>': read the data at the register\n"
-           "   'rw <num> <data>': write the data to the register\n"
-           " 'mww <addr> <data>': write a word (4 bytes) to the memory\n"
-           "        'mrb <addr>': read a byte from the memory\n"
-           " 'mwb <addr> >data>': write a byte to the memory\n");
+    printf(HELP_MSG);
 }
 
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
@@ -72,7 +42,7 @@ int parse_cmd(char *line, int serial_port) {
     s_a2 = strtok(NULL, " ");
 
     // connection test
-    if (match_strs(cmd, "t", "test")) {
+    if (match_strs(cmd, CTEST_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage t <number>\n");
             return 1;
@@ -85,7 +55,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // pause
-    if (match_strs(cmd, "p", "pause")) {
+    if (match_strs(cmd, PAUSE_TOKEN)) {
         printf("Pause MCU\n");
         if (mcu_pause(serial_port)) {
             return 1;
@@ -96,7 +66,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // resume
-    if (match_strs(cmd, "r", "resume")) {
+    if (match_strs(cmd, RESUME_TOKEN)) {
         printf("Resume MCU\n");
         if (mcu_resume(serial_port)) {
             return 1;
@@ -131,19 +101,19 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // step
-    if (match_strs(cmd, "s", "step")) {
+    if (match_strs(cmd, STEP_TOKEN)) {
         printf("Step\n");
         return mcu_step(serial_port);
     }
 
     // reset
-    if (match_strs(cmd, "rs", "reset")) {
+    if (match_strs(cmd, RESET_TOKEN)) {
         printf("Reset MCU\n");
         return mcu_reset(serial_port);
     }
 
     // status (not implemented)
-    if (match_strs(cmd, "st", "status")) {
+    if (match_strs(cmd, STATUS_TOKEN)) {
         printf("Request MCU status\n");
         fprintf(stderr, "Warning: not implemented\n");
         int s, err;
@@ -153,7 +123,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // add breakpoint
-    if (match_strs(cmd, "b", "break")) {
+    if (match_strs(cmd, BPADD_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: b <pc>\n");
             return 1;
@@ -172,7 +142,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // delete breakpoint
-    if (match_strs(cmd, "d", "del")) {
+    if (match_strs(cmd, BPDEL_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <bp-num>\n");
             return 1;
@@ -190,7 +160,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // clear breakpoints
-    if (match_strs(cmd, "bc", "clear")) {
+    if (match_strs(cmd, BPCLR_TOKEN)) {
         printf("Clear breakpoints\n");
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] >= 0) {
@@ -204,7 +174,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // list breakpoints
-    if (match_strs(cmd, "bl", "list")) {
+    if (match_strs(cmd, BPLIST_TOKEN)) {
         printf("List breakpoints\n");
         printf("NUM  |  PC\n");
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
@@ -215,7 +185,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // read register file
-    if (match_strs(cmd, "rr", "reg-read")) {
+    if (match_strs(cmd, REG_RD_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: rr <reg-num>\n");
             return 1;
@@ -234,7 +204,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // write register file
-    if (match_strs(cmd, "rw", "reg-write")) {
+    if (match_strs(cmd, REG_WR_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
             fprintf(stderr, "Error: usage: rw <reg-num> <data>\n");
             return 1;
@@ -253,7 +223,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // read word from memory
-    if (match_strs(cmd, "mrw", "mem-read-word")) {
+    if (match_strs(cmd, MEM_RD_W_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return 1;
@@ -272,7 +242,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // write word to memory
-    if (match_strs(cmd, "mww", "mem-write-word")) {
+    if (match_strs(cmd, MEM_WR_W_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
             return 1;
@@ -291,7 +261,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // read byte from memory
-    if (match_strs(cmd, "mrb", "mem-read-byte")) {
+    if (match_strs(cmd, MEM_RD_B_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return 1;
@@ -310,7 +280,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // write a byte to memory
-    if (match_strs(cmd, "mwb", "mem-write-byte")) {
+    if (match_strs(cmd, MEM_WR_B_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
             fprintf(stderr, "Error: usage: mww <0xN | N> <0xN | N>\n");
             return 1;
@@ -339,7 +309,7 @@ void debug_cli(char *path, int serial_port) {
     char *line;
     int err = 0;
 
-    printf("\n" CYAN "UART Debugger" RESET " | " MAGENTA "%s\n" RESET, VERSION);
+    printf("\n" CYAN "UART Debugger\n" RESET);
     printf("Enter 'h' or 'help' for usage details.\n");
 
     // run until EOD is read
