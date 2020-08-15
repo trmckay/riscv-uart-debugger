@@ -26,8 +26,7 @@ void help() {
 
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
 // RETURNS: 0 for success, non-zero for error
-// TODO: this probably needs to be split by command in the future
-//   or it will quickly grow too large to maintain
+
 int parse_cmd(char *line, int serial_port) {
     char *cmd, *s_a1, *s_a2;
 
@@ -60,7 +59,6 @@ int parse_cmd(char *line, int serial_port) {
         if (mcu_pause(serial_port)) {
             return 1;
         } else {
-            paused = 1;
             return 0;
         }
     }
@@ -71,7 +69,6 @@ int parse_cmd(char *line, int serial_port) {
         if (mcu_resume(serial_port)) {
             return 1;
         } else {
-            paused = 0;
             return 0;
         }
     }
