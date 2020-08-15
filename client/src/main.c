@@ -62,7 +62,7 @@ void start_debugger(char *path) {
         exit(EXIT_FAILURE);
     }
 
-    if (connection_test(serial_port, 16, 0)) {
+    if (connection_test(serial_port, 16, 0, 0)) {
         fprintf(stderr, "Error: could not open a stable connection\n");
         exit(EXIT_FAILURE);
     }
@@ -80,7 +80,7 @@ int try_open(char *path) {
 
     if (open_serial(path, &serial_port))
         return 0;
-    else if (connection_test(serial_port, 1, 0)) {
+    else if (connection_test(serial_port, 1, 0, 1)) {
         restore_term(serial_port);
         close(serial_port);
         return 0;
@@ -96,14 +96,14 @@ void autodetect_and_start() {
     struct dirent *ent;
     char full_path[256] = "/dev/";
 
-    printf("Autodetecting device...\n\n");
+    printf("Autodetecting device...\n");
 
     if ((dir = opendir("/dev")) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             if (starts_with(ent->d_name, "ttyS") || starts_with(ent->d_name, "ttyUSB")) {
                 strcat(full_path, ent->d_name);
                 if (try_open(full_path)) {
-                    printf("\nFound: %s\n\n", full_path);
+                    printf("Found: %s\n", full_path);
                     start_debugger(full_path);
                     return;
                 }

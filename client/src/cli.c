@@ -51,7 +51,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: t <number>\n");
             return 1;
         }
-        return connection_test(serial_port, a1, 1);
+        return connection_test(serial_port, a1, 1, 0);
     }
 
     // pause

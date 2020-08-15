@@ -53,11 +53,8 @@ int open_serial(char *path, int *serial_port) {
     }
 
     /* Save the terminal attributes so we can restore them later. */
-    printf("Reading terminal attributes and saving for restore...");
     tcgetattr(*serial_port, &saved_attributes);
-    printf("done!\n");
 
-    printf("Flushing transmit buffer and setting raw mode...");
     // Set the funny terminal modes.
     tcgetattr(*serial_port, &tattr);
     tattr.c_oflag &= ~OPOST; // raw output
@@ -73,9 +70,7 @@ int open_serial(char *path, int *serial_port) {
         INTER_BYTE_TIMEOUT;    // allow up to 1.0 secs between bytes received
     cfsetospeed(&tattr, BAUD); // set baud rate
     tcsetattr(*serial_port, TCSAFLUSH, &tattr);
-    printf("done!\n");
 
-    printf("Ready to communicate!\n\n");
     return 0;
 }
 

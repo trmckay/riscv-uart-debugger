@@ -27,7 +27,7 @@
 #define FN_MEM_WR_WORD 0x0C
 #define FN_REG_WR 0x0D
 
-int connection_test(int serial_port, int n, int do_log);
+int connection_test(int serial_port, int n, int do_log, int quiet);
 int mcu_program(int serial_port, char *path, int fast);
 int mcu_pause(int serial_port);
 int mcu_resume(int serial_port);

@@ -88,7 +88,7 @@ int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
 
 // DESCRIPTION: Run a test to verify the integrity of the connection
 // RETURNS: 1 if failed, 0 if success
-int connection_test(int serial_port, int n, int logging) {
+int connection_test(int serial_port, int n, int logging, int quiet) {
     int misses = 0;
     int do_log = logging;
     word_t r, s;
@@ -111,22 +111,27 @@ int connection_test(int serial_port, int n, int logging) {
     float nkb = (float)(n * 7 * 4) / 1024;
     // number of useful kilobytes transfered
     float nukb = (float)(n * 4) / 1024;
-    printf("Testing connection with %d commands (%.2f kB)\n", n, nkb);
+
+    if (!quiet)
+        printf("Testing connection with %d commands (%.2f kB)\n", n, nkb);
 
     // the following loop will:
     //   - Send a bunch of NONE commands to the MCU
     //   - Send random address/data words
     //   - Check and keep track of invalid echos
     for (int i = 0; i < n; i++) {
-        fprintf(stderr, "Progress: %.1f%%\r", (float)(i * 100) / n);
+        if (!quiet)
+            fprintf(stderr, "Progress: %.1f%%\r", (float)(i * 100) / n);
 
         s = 0;
         if (send_word(serial_port, s)) {
-            fprintf(stderr, "Error: failed to send data\n");
+            if (!quiet)
+                fprintf(stderr, "Error: failed to send data\n");
             return 3;
         }
         if (read_word(serial_port, &r)) {
-            fprintf(stderr, "Error: did not recieve a reply\n");
+            if (!quiet)
+                fprintf(stderr, "Error: did not recieve a reply\n");
             return 2;
         }
         if (r != 0)
@@ -139,11 +144,13 @@ int connection_test(int serial_port, int n, int logging) {
         // send random addr
         s = rand();
         if (send_word(serial_port, s)) {
-            fprintf(stderr, "Error: failed to send data\n");
+            if (!quiet)
+                fprintf(stderr, "Error: failed to send data\n");
             return 3;
         }
         if (read_word(serial_port, &r)) {
-            fprintf(stderr, "Error: did not recieve a reply\n");
+            if (!quiet)
+                fprintf(stderr, "Error: did not recieve a reply\n");
             return 2;
         }
         if (s != r)
@@ -155,11 +162,13 @@ int connection_test(int serial_port, int n, int logging) {
         // send random data
         s = rand();
         if (send_word(serial_port, s)) {
-            fprintf(stderr, "Error: failed to send data\n");
+            if (!quiet)
+                fprintf(stderr, "Error: failed to send data\n");
             return 3;
         }
         if (read_word(serial_port, &r)) {
-            fprintf(stderr, "Error: did not recieve a reply\n");
+            if (!quiet)
+                fprintf(stderr, "Error: did not recieve a reply\n");
             return 2;
         }
         if (s != r)
@@ -176,24 +185,30 @@ int connection_test(int serial_port, int n, int logging) {
     time_t t_fin;
     time(&t_fin);
 
-    // print out some useful data
     int dt = (int)(t_fin - t_start);
     float acc = (float)((3 * n) - misses) / (3 * n);
-    printf("                           ");
-    printf("\n  Actual: %.2f kB in %ds (%.2f kB/s)\n", nkb, dt, nkb / dt);
-    printf("Apparent: %.2f kB in %ds (%.2f kB/s)\n", nukb, dt, nukb / dt);
-    printf((acc > 0.99999) ? GREEN : RED);
-    printf("Accuracy: %.2f\n", acc);
-    printf(RESET);
+
+    // print out some useful data
+    if (!quiet) {
+        printf("                           ");
+        printf("\n  Actual: %.2f kB in %ds (%.2f kB/s)\n", nkb, dt, nkb / dt);
+        printf("Apparent: %.2f kB in %ds (%.2f kB/s)\n", nukb, dt, nukb / dt);
+        printf((acc > 0.99999) ? GREEN : RED);
+        printf("Accuracy: %.2f\n", acc);
+        printf(RESET);
+    }
+    
     if (do_log)
         printf("\nSee details in test.log\n");
 
     if (acc < 0.95) {
-        fprintf(
-            stderr,
-            "Error: Connection test failed due to low transmission accuracy\n");
-        fprintf(stderr, "Make sure the connection is secure or try a higher "
+        if (!quiet) {
+            fprintf(
+                stderr,
+                "Error: Connection test failed due to low transmission accuracy\n");
+            fprintf(stderr, "Make sure the connection is secure or try a higher "
                         "quality cable.\n");
+        }
         return 1;
     } else
         return 0;
