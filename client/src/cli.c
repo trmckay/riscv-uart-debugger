@@ -24,9 +24,12 @@ void help() {
     printf(HELP_MSG);
 }
 
+int parse_register_addr(char *tok) {
+    return parse_int(tok);
+}
+
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
 // RETURNS: 0 for success, non-zero for error
-
 int parse_cmd(char *line, int serial_port) {
     char *cmd, *s_a1, *s_a2;
 
@@ -100,6 +103,10 @@ int parse_cmd(char *line, int serial_port) {
     // step
     if (match_strs(cmd, STEP_TOKEN)) {
         printf("Step\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
+            return 1;
+        }
         return mcu_step(serial_port);
     }
 
@@ -187,12 +194,15 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rr <reg-num>\n");
             return 1;
         }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        a1 = parse_register_addr(s_a1); 
+        if (a1 < 0 || a1 > RF_SIZE) {
+            fprintf(stderr, "Error: address out of range\n");
             return 1;
         }
-        a1 = parse_int(s_a1);
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
+            return 1;
+        }
         word_t r;
         int err;
         err = mcu_reg_read(serial_port, a1, &r);
@@ -206,14 +216,15 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rw <reg-num> <data>\n");
             return 1;
         }
-        if ((a1 = parse_int(s_a1)) < 0) {
-            fprintf(stderr, "Error: address must be positive integer\n");
-        }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        a1 = parse_register_addr(s_a1); 
+        if (a1 < 0 || a1 > RF_SIZE) {
+            fprintf(stderr, "Error: address out of range\n");
             return 1;
         }
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
+            return 1;
+        }      
         a2 = parse_int(s_a2);
         printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_reg_write(serial_port, a1, a2);
@@ -225,11 +236,10 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return 1;
         }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }
+        }      
         a1 = parse_int(s_a1);
         word_t r;
         int err;
@@ -247,11 +257,10 @@ int parse_cmd(char *line, int serial_port) {
         if ((a1 = parse_int(s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }
+        }      
         a2 = parse_int(s_a2);
         printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_mem_write_word(serial_port, a1, a2);
@@ -263,11 +272,10 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return 1;
         }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }
+        }      
         a1 = parse_int(s_a1);
         byte_t r;
         int err;
@@ -285,11 +293,10 @@ int parse_cmd(char *line, int serial_port) {
         if ((a1 = parse_int(s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
-        if (!paused) {
-            fprintf(stderr, "Error: this operation can only be performed while "
-                            "the MCU is paused\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }
+        }      
         a2 = parse_int(s_a2);
         printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
         return mcu_mem_write_byte(serial_port, a1, a2);
