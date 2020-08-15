@@ -15,7 +15,7 @@ void unrecognized_cmd(char *line) {
             "Error: unrecognized command\n"
             "Execute external shell commands with a leading '!'.\n"
             "Example: '! %s' or '!%s'\n"
-            "Enter 'h' or 'help' for more information.\n",
+            "Enter 'h' for more information.\n",
             line, line);
 }
 
@@ -77,7 +77,7 @@ int parse_cmd(char *line, int serial_port) {
     }
 
     // program
-    if (match_strs(cmd, "pr", "program")) {
+    if (match_strs(cmd, PROGRAM_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: pr <mem.bin> [-f]\n");
             return 1;
@@ -310,7 +310,7 @@ void debug_cli(char *path, int serial_port) {
     int err = 0;
 
     printf("\n" CYAN "UART Debugger\n" RESET);
-    printf("Enter 'h' or 'help' for usage details.\n");
+    printf("Enter 'h' for usage details.\n");
 
     // run until EOD is read
     while (1) {
@@ -328,18 +328,18 @@ void debug_cli(char *path, int serial_port) {
         }
 
         // help message
-        else if (match_strs(line, "h", "help")) {
+        else if (match_strs(line, "h")) {
             help();
             err = 0;
         }
 
         // quit/exit
-        else if (match_strs(line, "q", "quit")) {
+        else if (match_strs(line, "q")) {
             free(line);
             return;
             // I find myself constantly wanting to exit with "exit"
             // so I've included that for as well
-        } else if (match_strs(line, "ex", "exit")) {
+        } else if (match_strs(line, "exit")) {
             free(line);
             return;
             // for exiting on EOD

@@ -16,7 +16,7 @@ int parse_int(char *str) {
     prefix[2] = 0;
 
     // hex formatted
-    if (match_strs(prefix, "0x", "0X")) {
+    if (match_strs(prefix, "0x") || match_strs(prefix, "0X")) {
         return (word_t)strtol(str, NULL, 0);
     }
     // decimal formatted
