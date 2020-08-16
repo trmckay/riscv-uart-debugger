@@ -15,5 +15,6 @@ od/app/bin
 *.out
 *.toc
 client/build
+.ccls
 uart-db-build
 *.tar.gz
