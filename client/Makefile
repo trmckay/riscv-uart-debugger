@@ -1,6 +1,6 @@
 CC = gcc
 BUILD = build
-CFLAGS = -Wall -L/usr/include -lreadline
+CFLAGS = -Wall -L/usr/include -lreadline `pkg-config --cflags --libs glib-2.0`
 TARGET = $(BUILD)/uart-db
 
 rv32:
