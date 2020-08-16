@@ -24,7 +24,12 @@ void help() {
     printf(HELP_MSG);
 }
 
-int parse_register_addr(char *tok) {
+// defines a variable with the key 'name'
+void define_var(char *name, word_t value) {
+}
+
+// searches defined variables, then parses as integer
+word_t get_num(char *tok) {
     return parse_int(tok);
 }
 
@@ -49,7 +54,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage t <number>\n");
             return 1;
         }
-        if ((a1 = parse_int(s_a1)) < 1) {
+        if ((a1 = get_num(s_a1)) < 1) {
             fprintf(stderr, "Error: usage: t <number>\n");
             return 1;
         }
@@ -113,6 +118,10 @@ int parse_cmd(char *line, int serial_port) {
     // reset
     if (match_strs(cmd, RESET_TOKEN)) {
         printf("Reset MCU\n");
+        if (mcu_pause(serial_port)) {
+            fprintf(stderr, "Error: failed to pause MCU\n");
+            return 1;
+        }
         return mcu_reset(serial_port);
     }
 
@@ -132,7 +141,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: b <pc>\n");
             return 1;
         }
-        a1 = parse_int(s_a1);
+        a1 = get_num(s_a1);
 
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] < 0) {
@@ -151,7 +160,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: d <bp-num>\n");
             return 1;
         }
-        a1 = parse_int(s_a1);
+        a1 = get_num(s_a1);
         if (a1 < MAX_BREAK_PTS && bps[a1] >= 0) {
             printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)bps[a1]);
             int err = mcu_rm_breakpoint(serial_port, bps[a1]);
@@ -179,7 +188,16 @@ int parse_cmd(char *line, int serial_port) {
 
     // list breakpoints
     if (match_strs(cmd, BPLIST_TOKEN)) {
+        int none = 1;
         printf("List breakpoints\n");
+        for (int i = 0; i < MAX_BREAK_PTS; i++) {
+            if (bps[i] > 0)
+                none = 0;
+        }
+        if (none) {
+            printf("No breakpoints set\n");
+            return 0;
+        }
         printf("NUM  |  PC\n");
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] > 0)
@@ -194,7 +212,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rr <reg-num>\n");
             return 1;
         }
-        a1 = parse_register_addr(s_a1); 
+        a1 = parse_register_addr(s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return 1;
@@ -216,7 +234,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rw <reg-num> <data>\n");
             return 1;
         }
-        a1 = parse_register_addr(s_a1); 
+        a1 = parse_register_addr(s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return 1;
@@ -224,8 +242,8 @@ int parse_cmd(char *line, int serial_port) {
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }      
-        a2 = parse_int(s_a2);
+        }
+        a2 = get_num(s_a2);
         printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_reg_write(serial_port, a1, a2);
     }
@@ -239,8 +257,8 @@ int parse_cmd(char *line, int serial_port) {
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }      
-        a1 = parse_int(s_a1);
+        }
+        a1 = get_num(s_a1);
         word_t r;
         int err;
         err = mcu_mem_read_word(serial_port, a1, &r);
@@ -254,14 +272,14 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
             return 1;
         }
-        if ((a1 = parse_int(s_a1)) < 0) {
+        if ((a1 = get_num(s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }      
-        a2 = parse_int(s_a2);
+        }
+        a2 = get_num(s_a2);
         printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_mem_write_word(serial_port, a1, a2);
     }
@@ -275,8 +293,8 @@ int parse_cmd(char *line, int serial_port) {
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }      
-        a1 = parse_int(s_a1);
+        }
+        a1 = get_num(s_a1);
         byte_t r;
         int err;
         err = mcu_mem_read_byte(serial_port, a1, &r);
@@ -290,16 +308,20 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: mww <0xN | N> <0xN | N>\n");
             return 1;
         }
-        if ((a1 = parse_int(s_a1)) < 0) {
+        if ((a1 = get_num(s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
-        }      
-        a2 = parse_int(s_a2);
+        }
+        a2 = get_num(s_a2);
         printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
         return mcu_mem_write_byte(serial_port, a1, a2);
+    }
+
+    if (match_strs(cmd, DEF_VAR_TOKEN)) {
+        define_var(s_a1, parse_int(s_a2));
     }
 
     // print unrecognized cmd msg and return error
@@ -359,3 +381,74 @@ void debug_cli(char *path, int serial_port) {
         free(line);
     }
 }
+
+// god help us
+int parse_register_addr(char *tok) {
+    if (match_strs(tok, X0))
+        return 0;
+    else if (match_strs(tok, X1))
+        return 1;
+    else if (match_strs(tok, X2))
+        return 2;
+    else if (match_strs(tok, X3))
+        return 3;
+    else if (match_strs(tok, X4))
+        return 4;
+    else if (match_strs(tok, X5))
+        return 5;
+    else if (match_strs(tok, X6))
+        return 6;
+    else if (match_strs(tok, X7))
+        return 7;
+    else if (match_strs(tok, X8))
+        return 8;
+    else if (match_strs(tok, X9))
+        return 9;
+    else if (match_strs(tok, X10))
+        return 10;
+    else if (match_strs(tok, X11))
+        return 11;
+    else if (match_strs(tok, X12))
+        return 12;
+    else if (match_strs(tok, X13))
+        return 13;
+    else if (match_strs(tok, X14))
+        return 14;
+    else if (match_strs(tok, X15))
+        return 15;
+    else if (match_strs(tok, X16))
+        return 16;
+    else if (match_strs(tok, X17))
+        return 17;
+    else if (match_strs(tok, X18))
+        return 18;
+    else if (match_strs(tok, X19))
+        return 19;
+    else if (match_strs(tok, X20))
+        return 20;
+    else if (match_strs(tok, X21))
+        return 21;
+    else if (match_strs(tok, X22))
+        return 22;
+    else if (match_strs(tok, X23))
+        return 23;
+    else if (match_strs(tok, X24))
+        return 24;
+    else if (match_strs(tok, X25))
+        return 25;
+    else if (match_strs(tok, X26))
+        return 26;
+    else if (match_strs(tok, X27))
+        return 27;
+    else if (match_strs(tok, X28))
+        return 28;
+    else if (match_strs(tok, X29))
+        return 29;
+    else if (match_strs(tok, X30))
+        return 30;
+    else if (match_strs(tok, X31))
+        return 31;
+    else
+        return get_num(tok);
+}
+

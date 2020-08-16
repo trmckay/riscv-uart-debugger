@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "util.h"
 #include "serial.h"
+#include <gmodule.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <stdarg.h>
@@ -40,6 +41,40 @@
 #define MEM_WR_W_TOKEN "mww"
 #define MEM_RD_B_TOKEN "mrb"
 #define MEM_WR_B_TOKEN "mwb"
+#define DEF_VAR_TOKEN  "define"
+
+#define X0  "zero"
+#define X1  "ra"
+#define X2  "sp"
+#define X3  "gp"
+#define X4  "tp"
+#define X5  "t0"
+#define X6  "t1"
+#define X7  "t2"
+#define X8  "s0"
+#define X9  "s1"
+#define X10 "a0"
+#define X11 "a1"
+#define X12 "a2"
+#define X13 "a3"
+#define X14 "a4"
+#define X15 "a5"
+#define X16 "a6"
+#define X17 "a7"
+#define X18 "s2"
+#define X19 "s3"
+#define X20 "s4"
+#define X21 "s5"
+#define X22 "s6"
+#define X23 "s7"
+#define X24 "s8"
+#define X25 "s9"
+#define X26 "s10"
+#define X27 "s11"
+#define X28 "t3"
+#define X29 "t4"
+#define X30 "t5"
+#define X31 "t6"
 
 #define HELP_MSG \
 "============================ ABOUT ====================================\n"\
@@ -71,5 +106,6 @@
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
+int parse_register_addr(char *tok);
 
 #endif
