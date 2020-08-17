@@ -55,7 +55,7 @@ module controller_fsm #(
     localparam FN_MEM_WR_BYTE  = 4'hB;
     localparam FN_MEM_WR_WORD  = 4'hC;
     localparam FN_REG_WR       = 4'hD;
-    
+
     localparam TIMEOUT_COUNT  = TIMEOUT*CLK_RATE*'d1000;
 
     // keep track of mcu paused state
@@ -109,6 +109,7 @@ module controller_fsm #(
                         FN_RESUME: begin
                             resume       <= 1;
                             out_valid    <= 1;
+                            r_bp_en      <= 1;
                             r_mcu_paused <= 0;
                             r_ps         <= S_WAIT;
                         end
