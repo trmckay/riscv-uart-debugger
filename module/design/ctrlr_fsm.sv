@@ -6,7 +6,11 @@
 
 `timescale 1ns / 1ps
 
-module controller_fsm(
+module controller_fsm #(
+    // parameters
+    CLK_RATE = 50,    // clock rate in MHz
+    TIMEOUT  = 200   // timeout in ms
+    )(
     // INPUTS
     input clk,
 
@@ -32,7 +36,8 @@ module controller_fsm(
     output reg [1:0] mem_size = 2,
 
     // controller -> sdec
-    output ctrlr_busy
+    output ctrlr_busy,
+    output reg error = 0
 );
 
     // command codes
@@ -50,11 +55,15 @@ module controller_fsm(
     localparam FN_MEM_WR_BYTE  = 4'hB;
     localparam FN_MEM_WR_WORD  = 4'hC;
     localparam FN_REG_WR       = 4'hD;
+    
+    localparam TIMEOUT_COUNT  = TIMEOUT*CLK_RATE*'d1000;
 
     // keep track of mcu paused state
     reg r_mcu_paused = 0;
     reg r_ctrlr_busy = 0;
     assign ctrlr_busy = (r_ctrlr_busy || in_valid);
+
+    reg [31:0] r_time = 0;
 
     // breakpoints
     localparam MAX_BREAK_PTS = 8;
@@ -207,10 +216,9 @@ module controller_fsm(
             S_WAIT: begin
                 // out_valid is one-shot
                 out_valid <= 0;
+                r_time <= r_time + 1;
                 // wait on MCU
-                if (mcu_busy)
-                    r_ps <= S_WAIT;
-                else begin
+                if (!mcu_busy) begin
                     // clear cmd registers
                     pause        <= 0;
                     resume       <= 0;
@@ -219,7 +227,13 @@ module controller_fsm(
                     mem_wr       <= 0;
                     reg_rd       <= 0;
                     reg_wr       <= 0;
-                    r_ctrlr_busy <= 0;
+                    error        <= 0;
+                    r_time       <= 0;
+                    r_ps         <= S_IDLE;
+                end
+                else if (r_time > TIMEOUT_COUNT) begin
+                    error        <= 1;
+                    r_time       <= 0;
                     r_ps         <= S_IDLE;
                 end
             end

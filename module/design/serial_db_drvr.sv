@@ -25,7 +25,7 @@ module serial_driver #(
 
     // mcu -> sdec
     input [31:0] d_rd,
-    input error,
+    input [1:0] error,
 
     // OUTPUTS
     // sdrv -> controller
@@ -74,7 +74,8 @@ module serial_driver #(
         S_WAIT_DATA,
         S_ECHO_DATA,
         S_CTRLR,
-        S_REPLY,
+        S_SEND_DATA,
+        S_SEND_ERROR,
         S_PROG_RCV,
         S_PROG_WR
     } STATE;
@@ -139,7 +140,7 @@ module serial_driver #(
                 end
                 else if (r_time > TIMEOUT_COUNT) begin
                     r_time <= 0;
-                    r_ps <= S_WAIT_CMD:
+                    r_ps <= S_WAIT_CMD;
                 end
             end // S_WAIT
 
@@ -166,7 +167,7 @@ module serial_driver #(
                 end
                 else if (r_time > TIMEOUT_COUNT) begin
                     r_time <= 0;
-                    r_ps <= S_WAIT_CMD:
+                    r_ps <= S_WAIT_CMD;
                 end
             end // S_WAIT_DATA
 
@@ -181,28 +182,30 @@ module serial_driver #(
             end // S_ECHO_DATA
 
             S_CTRLR: begin
-                r_time <= r_time + 1;
                 r_out_valid <= 0;
                 if (!ctrlr_busy && !r_out_valid) begin
-                    // stop issue
-                    r_ps <= S_REPLY;
+                    r_ps <= S_SEND_DATA;
                     // start reply
                     r_tx_word <= d_rd;
                     r_tx_start <= 1;
-                    r_time <= 0;
-                end
-                else if (r_time > TIMEOUT_COUNT) begin
-                    r_ps <= S_WAIT_CMD:
-                    r_time <= 0;
                 end
             end // S_CTRLR
 
-            S_REPLY: begin
+            S_SEND_DATA: begin
+                r_tx_start <= 0;
+                if (l_tx_idle && !r_tx_start) begin
+                    r_ps <= S_SEND_ERROR;
+                    r_tx_word <= error;
+                    r_tx_start <= 1;
+                end
+            end // S_SEND_DATA
+
+            S_SEND_ERROR: begin
                 r_tx_start <= 0;
                 if (l_tx_idle && !r_tx_start) begin
                     r_ps <= S_WAIT_CMD;
                 end
-            end // S_REPLY
+            end
 
             S_PROG_RCV: begin
                 if (l_rx_ready) begin

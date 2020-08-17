@@ -27,8 +27,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 module debug_controller #(
-    BAUD = 115200,
-    CLK_RATE = 50
+    BAUD = 115200,   // baud rate (bit/s)
+    CLK_RATE = 50,   // clock rate (MHz)
+    TIMEOUT  = 200   // timeout (ms)
     )(
     input clk,
 
@@ -56,11 +57,16 @@ module debug_controller #(
     output valid
 );
 
-    logic l_ctrlr_busy, l_serial_valid;
+    localparam ERR_TIMEOUT = 2;
+    localparam ERR_MCU = 1;
+    localparam ERR_NONE = 0;
+
+    logic l_ctrlr_busy, l_serial_valid, l_ctrlr_error;
     reg [3:0] r_cmd;
     reg [31:0] r_addr, r_d_in;
     logic [3:0] l_cmd;
     logic [31:0] l_addr, l_d_in;
+    reg [1:0] r_ec;
 
     assign addr = l_addr;
     assign d_in = l_d_in;
@@ -71,19 +77,30 @@ module debug_controller #(
             r_cmd <= l_cmd;
             r_addr <= l_addr;
             r_d_in <= l_d_in;
+            r_ec <= ERR_NONE;
         end
+        if (l_ctrlr_error)
+            r_ec <= ERR_TIMEOUT;
+        if (error)
+            r_ec <= ERR_MCU;   
     end
+
+    // error code to be transmitted back to client
+    // 0 = no error
+    // 1 = timeout from controller
+    // 2 = error reported by MCU
 
     serial_driver #(
         .BAUD(BAUD),
-        .CLK_RATE(CLK_RATE)
+        .CLK_RATE(CLK_RATE),
+        .TIMEOUT(TIMEOUT)
     ) serial(
         .clk(clk),
         .reset(1'b0),
         .srx(srx),
+        .error(r_ec),
         .ctrlr_busy(l_ctrlr_busy),
         .d_rd(d_rd),
-        .error(error),
         .stx(stx),
         .cmd(l_cmd),
         .addr(l_addr),
@@ -91,7 +108,10 @@ module debug_controller #(
         .out_valid(l_serial_valid)
     );
 
-    controller_fsm fsm(
+    controller_fsm #(
+        .CLK_RATE(CLK_RATE),
+        .TIMEOUT(TIMEOUT)
+    ) fsm(
         .clk(clk),
         .cmd(l_cmd),
         .addr(l_addr),
@@ -107,6 +127,7 @@ module debug_controller #(
         .mem_wr(mem_wr),
         .mem_size(mem_size),
         .out_valid(valid),
+        .error(l_ctrlr_error),
         .ctrlr_busy(l_ctrlr_busy)
     );
 
