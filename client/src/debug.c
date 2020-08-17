@@ -245,9 +245,8 @@ int connection_test(int serial_port, int n, int logging, int quiet) {
 ////// DEBUGGER FUNCTIONS /////////////////////////////
 // Request that the MCU perform some sort of operation
 
-int mcu_pause(int serial_port) {
-    word_t r;
-    return send_cmd(serial_port, FN_PAUSE, 0, 0, 0, &r);
+int mcu_pause(int serial_port, word_t *pc) {
+    return send_cmd(serial_port, FN_PAUSE, 0, 0, 0, pc);
 }
 
 int mcu_resume(int serial_port) {

@@ -55,6 +55,7 @@ word_t get_num(ht_t *vars, char *tok) {
 int parse_cmd(char *line, int serial_port, ht_t *vars) {
     char *cmd, *s_a1, *s_a2;
     int ec;
+    word_t pc;
 
     // not strtok'd line for later use
     char line_copy[strlen(line) + 1];
@@ -82,7 +83,9 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // pause
     if (match_strs(cmd, PAUSE_TOKEN)) {
         printf("Pause MCU\n");
-        return (mcu_pause(serial_port));
+        if (!(ec = mcu_pause(serial_port, &pc)))
+            printf("pc = 0x%02X\n", pc);
+        return ec;
     }
 
     // resume
@@ -97,10 +100,10 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: pr <mem.bin> [-f]\n");
             return EXIT_FAILURE;
         }
-        if ((ec = mcu_pause(serial_port)))
+        if ((ec = mcu_pause(serial_port, &pc)))
             return ec;
         if ((ec = mcu_program(serial_port, s_a1, 1)))
-            return ec; 
+            return ec;
         if ((ec = mcu_reset(serial_port)))
             return ec;
         return mcu_resume(serial_port);
@@ -109,7 +112,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // step
     if (match_strs(cmd, STEP_TOKEN)) {
         printf("Step\n");
-        if ((ec = mcu_pause(serial_port))) {
+        if ((ec = mcu_pause(serial_port, &pc))) {
             return ec;
         }
         return mcu_step(serial_port);
@@ -118,7 +121,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // reset
     if (match_strs(cmd, RESET_TOKEN)) {
         printf("Reset MCU\n");
-        if ((ec = mcu_pause(serial_port)))
+        if ((ec = mcu_pause(serial_port, &pc)))
             return ec;
         if ((ec = mcu_reset(serial_port)))
             return ec;
@@ -218,7 +221,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
@@ -240,7 +243,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
@@ -257,7 +260,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
@@ -285,7 +288,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
@@ -301,7 +304,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
@@ -322,7 +325,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
         if ((a1 = get_num(vars, s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
-        if (mcu_pause(serial_port)) {
+        if (mcu_pause(serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
