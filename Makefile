@@ -1,5 +1,5 @@
 NAME = uart-db
-VERSION = v1.3
+VERSION = v1.4
 BUILD = $(NAME)-build
 
 release:
