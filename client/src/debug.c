@@ -22,7 +22,8 @@
 //                               ...
 //                                    ...
 //                                         ...
-//               <---------------- reply (word)
+//               <---------------- data reply (word)
+//               <---------------- error code reply (word)
 //
 // ARGUMENTS:
 //   serial_port: the FD of the device
@@ -37,63 +38,75 @@
 int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
              word_t *reply) {
 
-    word_t r;
+    word_t r, ec;
 
     // send command bytes
     if (send_word(serial_port, cmd)) {
-        fprintf(stderr, "Critical error: failed to send command bytes\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: failed to send command bytes\n");
+        return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
         fprintf(stderr,
-                "Critical error: could not read echo of command bytes\n");
-        exit(EXIT_FAILURE);
+                "Error: could not read echo of command bytes\n");
+        return ERR_CLIENT;
     }
     if (r != cmd) {
         fprintf(stderr, "Error: echo did not match command bytes\n");
-        return 1;
+        return ERR_CLIENT;
     }
 
     // send address bytes
     if (send_word(serial_port, addr)) {
-        fprintf(stderr, "Critical error: failed to send command bytes\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: failed to send command bytes\n");
+        return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
         fprintf(stderr,
-                "Critical error: could not read echo of command bytes\n");
-        exit(EXIT_FAILURE);
+                "Error: could not read echo of command bytes\n");
+        return ERR_CLIENT;
     }
     // only check that echo matches if argc includes this
     if ((argc >= 1) && (r != addr)) {
         fprintf(stderr, "Error: echo did not match address bytes\n");
-        return 1;
+        return ERR_CLIENT;
     }
 
     // send data bytes
     if (send_word(serial_port, data)) {
-        fprintf(stderr, "Critical error: failed to send command bytes\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: failed to send command bytes\n");
+        return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
         fprintf(stderr,
-                "Critical error: could not read echo of command bytes\n");
-        exit(EXIT_FAILURE);
+                "Error: could not read echo of command bytes\n");
+        return ERR_CLIENT;
     }
     // only check that echo matches if argc includes this
     if ((argc >= 2) && (r != data)) {
         fprintf(stderr, "Error: echo did not match address bytes\n");
-        return 1;
+        return ERR_CLIENT;
     }
 
     if (read_word(serial_port, &r)) {
-        fprintf(stderr, "Critical error: did not recieve final reply\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: did not recieve data reply\n");
+        return ERR_CLIENT;
+    }
+
+    if (read_word(serial_port, &ec)) {
+        fprintf(stderr, "Error: did not recieve final reply\n");
+        return ERR_CLIENT;
+    }
+
+    if (ec == ERR_MCU) {
+        fprintf(stderr, "Error: MCU reported an error to debug controller\n");
+    }
+    if (ec == ERR_TIMEOUT) {
+        fprintf(stderr, "Error: debug controller reported timeout\n");
     }
 
     // return reply and success code
     *reply = r;
-    return 0;
+    return ec;
 }
 
 // DESCRIPTION: Run a test to verify the integrity of the connection
@@ -101,7 +114,7 @@ int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
 int connection_test(int serial_port, int n, int logging, int quiet) {
     int misses = 0;
     int do_log = logging;
-    word_t r, s;
+    word_t r, s, ec;
     FILE *log;
 
     // start stopwatch
@@ -181,6 +194,11 @@ int connection_test(int serial_port, int n, int logging, int quiet) {
                 fprintf(stderr, "Error: did not recieve a reply\n");
             return 2;
         }
+        if (read_word(serial_port, &ec)) {
+            if (!quiet)
+                fprintf(stderr, "Error: did not recieve a reply\n");
+            return 2;
+        }
         if (s != r)
             misses += 1;
 
@@ -248,11 +266,10 @@ int mcu_reset(int serial_port) {
 }
 
 int mcu_status(int serial_port, int *status) {
-    word_t r;
-    if (send_cmd(serial_port, FN_STATUS, 0, 0, 0, &r))
-        return 1;
+    word_t r, ec;
+    ec = send_cmd(serial_port, FN_STATUS, 0, 0, 0, &r);
     *status = r;
-    return 0;
+    return ec;
 }
 
 int mcu_add_breakpoint(int serial_port, word_t addr) {
@@ -266,11 +283,10 @@ int mcu_rm_breakpoint(int serial_port, word_t index) {
 }
 
 int mcu_reg_read(int serial_port, word_t addr, word_t *data) {
-    word_t r;
-    if (send_cmd(serial_port, FN_REG_RD, addr, 0, 1, &r))
-        return 1;
+    word_t r, ec;
+    ec = send_cmd(serial_port, FN_REG_RD, addr, 0, 1, &r);
     *data = r;
-    return 0;
+    return ec;
 }
 
 int mcu_reg_write(int serial_port, word_t addr, word_t data) {

@@ -54,6 +54,7 @@ word_t get_num(ht_t *vars, char *tok) {
 // RETURNS: 0 for success, non-zero for error
 int parse_cmd(char *line, int serial_port, ht_t *vars) {
     char *cmd, *s_a1, *s_a2;
+    int ec;
 
     // not strtok'd line for later use
     char line_copy[strlen(line) + 1];
@@ -69,11 +70,11 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     if (match_strs(cmd, CTEST_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage t <number>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         if ((a1 = get_num(vars, s_a1)) < 1) {
             fprintf(stderr, "Error: usage: t <number>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         return connection_test(serial_port, a1, 1, 0);
     }
@@ -81,53 +82,35 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // pause
     if (match_strs(cmd, PAUSE_TOKEN)) {
         printf("Pause MCU\n");
-        if (mcu_pause(serial_port)) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return (mcu_pause(serial_port));
     }
 
     // resume
     if (match_strs(cmd, RESUME_TOKEN)) {
         printf("Resume MCU\n");
-        if (mcu_resume(serial_port)) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return (mcu_resume(serial_port));
     }
 
     // program
     if (match_strs(cmd, PROGRAM_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: pr <mem.bin> [-f]\n");
-            return 1;
+            return EXIT_FAILURE;
         }
-
-        if (mcu_pause(serial_port))
-            return 1;
-
-        if (mcu_program(serial_port, s_a1, 1)) {
-            fprintf(stderr, "Error: failed to program MCU\n");
-            return 1;
-        }
-
-        if (mcu_reset(serial_port))
-            return 1;
-
-        if (mcu_resume(serial_port))
-            return 1;
-
-        return 0;
+        if ((ec = mcu_pause(serial_port)))
+            return ec;
+        if ((ec = mcu_program(serial_port, s_a1, 1)))
+            return ec; 
+        if ((ec = mcu_reset(serial_port)))
+            return ec;
+        return mcu_resume(serial_port);
     }
 
     // step
     if (match_strs(cmd, STEP_TOKEN)) {
         printf("Step\n");
-        if (mcu_pause(serial_port)) {
-            fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+        if ((ec = mcu_pause(serial_port))) {
+            return ec;
         }
         return mcu_step(serial_port);
     }
@@ -135,11 +118,11 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // reset
     if (match_strs(cmd, RESET_TOKEN)) {
         printf("Reset MCU\n");
-        if (mcu_pause(serial_port)) {
-            fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
-        }
-        return mcu_reset(serial_port);
+        if ((ec = mcu_pause(serial_port)))
+            return ec;
+        if ((ec = mcu_reset(serial_port)))
+            return ec;
+        return mcu_resume(serial_port);
     }
 
     // status (not implemented)
@@ -147,7 +130,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
         printf("Request MCU status\n");
         fprintf(stderr, "Warning: not implemented\n");
         int s, err;
-        err = (mcu_status(serial_port, &s));
+        err = mcu_status(serial_port, &s);
         printf("Status: %d\n", s);
         return err;
     }
@@ -156,7 +139,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     if (match_strs(cmd, BPADD_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: b <pc>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a1 = get_num(vars, s_a1);
 
@@ -168,14 +151,14 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             }
         }
         fprintf(stderr, "Error: max number of breakpoints reached\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // delete breakpoint
     if (match_strs(cmd, BPDEL_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <bp-num>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a1 = get_num(vars, s_a1);
         if (a1 < MAX_BREAK_PTS && bps[a1] >= 0) {
@@ -185,7 +168,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             return err;
         } else {
             fprintf(stderr, "Error: breakpoint does not exist\n");
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
@@ -197,11 +180,11 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
                 printf("Delete breakpoint %d @ pc = 0x%08X\n", i,
                        (word_t)bps[i]);
                 if (mcu_rm_breakpoint(serial_port, bps[i]))
-                    return 1;
+                    return EXIT_FAILURE;
                 bps[i] = -1;
             }
         }
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     // list breakpoints
@@ -214,73 +197,79 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
         }
         if (none) {
             printf("No breakpoints set\n");
-            return 0;
+            return EXIT_SUCCESS;
         }
         printf("NUM  |  PC\n");
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] > 0)
                 printf(" %d   |  0x%08X\n", i, (word_t)bps[i]);
         }
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     // read register file
     if (match_strs(cmd, REG_RD_TOKEN)) {
         if (s_a1 == NULL) {
-            fprintf(stderr, "Error: usage: rr <reg-num>\n");
-            return 1;
+            fprintf(stderr, "Error: usage: rr <reg>\n");
+            return EXIT_FAILURE;
         }
         a1 = parse_register_addr(vars, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         word_t r;
         int err;
-        err = mcu_reg_read(serial_port, a1, &r);
-        printf("x%d = %d (0x%08X)\n", a1, r, r);
+        if (!(err = mcu_reg_read(serial_port, a1, &r)))
+            printf("x%d = %d (0x%08X)\n", a1, r, r);
         return err;
     }
 
     // write register file
     if (match_strs(cmd, REG_WR_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
-            fprintf(stderr, "Error: usage: rw <reg-num> <data>\n");
-            return 1;
+            fprintf(stderr, "Error: usage: rw <reg> <data>\n");
+            return EXIT_FAILURE;
         }
         a1 = parse_register_addr(vars, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a2 = get_num(vars, s_a2);
-        printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
-        return mcu_reg_write(serial_port, a1, a2);
+        int err;
+        if (!(err = mcu_reg_write(serial_port, a1, a2)))
+            printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
+        return err;
     }
 
     // read word from memory
     if (match_strs(cmd, MEM_RD_W_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <pc>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a1 = get_num(vars, s_a1);
+        if (a1 < 0 || a1 > 0xFFFFFFFF) {
+            fprintf(stderr, "Error: address out of range\n");
+            return EXIT_FAILURE;
+        }
         word_t r;
         int err;
-        err = mcu_mem_read_word(serial_port, a1, &r);
-        printf("MEM[0x%08X] = %d (0x%08X)\n", a1, r, r);
+        if (!(err = mcu_mem_read_word(serial_port, a1, &r)))
+            printf("MEM[0x%08X] = %d (0x%08X)\n", a1, r, r);
         return err;
     }
 
@@ -288,59 +277,65 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     if (match_strs(cmd, MEM_WR_W_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
-        if ((a1 = get_num(vars, s_a1)) < 0) {
-            fprintf(stderr, "Error: address must be positive integer\n");
+        a1 = get_num(vars, s_a1);
+        a2 = get_num(vars, s_a2);
+        if (a1 < 0 || a1 > 0xFFFFFFFF) {
+            fprintf(stderr, "Error: address out of range\n");
+            return EXIT_FAILURE;
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
-        a2 = get_num(vars, s_a2);
-        printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
-        return mcu_mem_write_word(serial_port, a1, a2);
+        int err;
+        if (!(err = mcu_mem_write_word(serial_port, a1, a2)))
+            printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
+        return err;
     }
 
     // read byte from memory
     if (match_strs(cmd, MEM_RD_B_TOKEN)) {
         if (s_a1 == NULL) {
             fprintf(stderr, "Error: usage: d <pc>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a1 = get_num(vars, s_a1);
         byte_t r;
         int err;
-        err = mcu_mem_read_byte(serial_port, a1, &r);
-        printf("MEM[0x%08X] = %d (0x%04X)\n", a1, r, r);
+        if (!(err = mcu_mem_read_byte(serial_port, a1, &r)))
+            printf("MEM[0x%08X] = %d (0x%04X)\n", a1, r, r);
         return err;
     }
 
     // write a byte to memory
     if (match_strs(cmd, MEM_WR_B_TOKEN)) {
         if (s_a1 == NULL || s_a2 == NULL) {
-            fprintf(stderr, "Error: usage: mww <0xN | N> <0xN | N>\n");
-            return 1;
+            fprintf(stderr, "Error: usage: mww <addr> <data>\n");
+            return EXIT_FAILURE;
         }
         if ((a1 = get_num(vars, s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
-            return 1;
+            return EXIT_FAILURE;
         }
         a2 = get_num(vars, s_a2);
-        printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
-        return mcu_mem_write_byte(serial_port, a1, a2);
+        int err;
+        if (!(err = mcu_mem_write_byte(serial_port, a1, a2)))
+            printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
+        return err;
     }
 
     // print unrecognized cmd msg and return error
     unrecognized_cmd(line_copy);
-    return 1;
+    return EXIT_FAILURE;
 }
 
 // loads user defined variables into program from path
@@ -482,6 +477,8 @@ void debug_cli(char *path, int serial_port) {
 
 // god help us
 int parse_register_addr(ht_t *vars, char *tok) {
+    if (tok[0] == 'x')
+        return parse_int(tok + sizeof(char));
     if (match_strs(tok, X0))
         return 0;
     else if (match_strs(tok, X1))
