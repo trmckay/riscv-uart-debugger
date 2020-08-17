@@ -112,6 +112,7 @@ void autodetect_and_start() {
                 if (try_open(full_path)) {
                     printf("Found: %s\n", full_path);
                     start_debugger(full_path);
+                    closedir(dir);
                     return;
                 }
             full_path[5] = 0;

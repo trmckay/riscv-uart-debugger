@@ -10,6 +10,9 @@
 #define RESET "\x1b[0m"
 
 #define MAX_BREAK_PTS 8
+#define MAX_VAR_COUNT 256
+
+#define REL_CONFIG_PATH "/.config/uart-db/config"
 
 #define CTEST_TOKEN    "t"
 #define PAUSE_TOKEN    "p"
@@ -28,7 +31,6 @@
 #define MEM_WR_W_TOKEN "mww"
 #define MEM_RD_B_TOKEN "mrb"
 #define MEM_WR_B_TOKEN "mwb"
-#define DEF_VAR_TOKEN  "define"
 
 #define X0  "zero"
 #define X1  "ra"
@@ -93,6 +95,5 @@
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
-int parse_register_addr(char *tok);
 
 #endif

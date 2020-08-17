@@ -1,15 +1,22 @@
 #include "cli.h"
+#include "debug.h"
 #include "types.h"
 #include "util.h"
-#include "debug.h"
+#include <gmodule.h>
+#include <pwd.h>
+#include <readline/history.h>
+#include <readline/readline.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <readline/history.h>
-#include <readline/readline.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+typedef GHashTable ht_t;
+int parse_register_addr(ht_t *vars, char *tok);
 
 // Array of breakpoints (also should be tracked in the module)
 // -1 = none
@@ -31,22 +38,21 @@ void unrecognized_cmd(char *line) {
 }
 
 // long-form help message
-void help() {
-    printf(HELP_MSG);
-}
+void help() { printf(HELP_MSG); }
 
-// defines a variable with the key 'name'
-void define_var(char *name, word_t value) {
-}
-
-// searches defined variables, then parses as integer
-word_t get_num(char *tok) {
-    return parse_int(tok);
+// searches defined variables, or parses as integer
+word_t get_num(ht_t *vars, char *tok) {
+    word_t *r;
+    r = (word_t *)g_hash_table_lookup(vars, tok);
+    if (r == NULL)
+        return parse_int(tok);
+    else
+        return *r;
 }
 
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
 // RETURNS: 0 for success, non-zero for error
-int parse_cmd(char *line, int serial_port) {
+int parse_cmd(char *line, int serial_port, ht_t *vars) {
     char *cmd, *s_a1, *s_a2;
 
     // not strtok'd line for later use
@@ -65,7 +71,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage t <number>\n");
             return 1;
         }
-        if ((a1 = get_num(s_a1)) < 1) {
+        if ((a1 = get_num(vars, s_a1)) < 1) {
             fprintf(stderr, "Error: usage: t <number>\n");
             return 1;
         }
@@ -152,7 +158,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: b <pc>\n");
             return 1;
         }
-        a1 = get_num(s_a1);
+        a1 = get_num(vars, s_a1);
 
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] < 0) {
@@ -171,7 +177,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: d <bp-num>\n");
             return 1;
         }
-        a1 = get_num(s_a1);
+        a1 = get_num(vars, s_a1);
         if (a1 < MAX_BREAK_PTS && bps[a1] >= 0) {
             printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)bps[a1]);
             int err = mcu_rm_breakpoint(serial_port, bps[a1]);
@@ -188,7 +194,8 @@ int parse_cmd(char *line, int serial_port) {
         printf("Clear breakpoints\n");
         for (int i = 0; i < MAX_BREAK_PTS; i++) {
             if (bps[i] >= 0) {
-                printf("Delete breakpoint %d @ pc = 0x%08X\n", i, (word_t)bps[i]);
+                printf("Delete breakpoint %d @ pc = 0x%08X\n", i,
+                       (word_t)bps[i]);
                 if (mcu_rm_breakpoint(serial_port, bps[i]))
                     return 1;
                 bps[i] = -1;
@@ -223,7 +230,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rr <reg-num>\n");
             return 1;
         }
-        a1 = parse_register_addr(s_a1);
+        a1 = parse_register_addr(vars, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return 1;
@@ -245,7 +252,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: rw <reg-num> <data>\n");
             return 1;
         }
-        a1 = parse_register_addr(s_a1);
+        a1 = parse_register_addr(vars, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return 1;
@@ -254,7 +261,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
         }
-        a2 = get_num(s_a2);
+        a2 = get_num(vars, s_a2);
         printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_reg_write(serial_port, a1, a2);
     }
@@ -269,7 +276,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
         }
-        a1 = get_num(s_a1);
+        a1 = get_num(vars, s_a1);
         word_t r;
         int err;
         err = mcu_mem_read_word(serial_port, a1, &r);
@@ -283,14 +290,14 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
             return 1;
         }
-        if ((a1 = get_num(s_a1)) < 0) {
+        if ((a1 = get_num(vars, s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
         }
-        a2 = get_num(s_a2);
+        a2 = get_num(vars, s_a2);
         printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
         return mcu_mem_write_word(serial_port, a1, a2);
     }
@@ -305,7 +312,7 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
         }
-        a1 = get_num(s_a1);
+        a1 = get_num(vars, s_a1);
         byte_t r;
         int err;
         err = mcu_mem_read_byte(serial_port, a1, &r);
@@ -319,20 +326,16 @@ int parse_cmd(char *line, int serial_port) {
             fprintf(stderr, "Error: usage: mww <0xN | N> <0xN | N>\n");
             return 1;
         }
-        if ((a1 = get_num(s_a1)) < 0) {
+        if ((a1 = get_num(vars, s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
         if (mcu_pause(serial_port)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return 1;
         }
-        a2 = get_num(s_a2);
+        a2 = get_num(vars, s_a2);
         printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
         return mcu_mem_write_byte(serial_port, a1, a2);
-    }
-
-    if (match_strs(cmd, DEF_VAR_TOKEN)) {
-        define_var(s_a1, parse_int(s_a2));
     }
 
     // print unrecognized cmd msg and return error
@@ -340,11 +343,94 @@ int parse_cmd(char *line, int serial_port) {
     return 1;
 }
 
+// loads user defined variables into program from path
+// default: ~/.config/uart-db/config
+// returns number of variables found
+int populate_vars(ht_t *vars_ht, char **keys, word_t *values, char *path) {
+    char *line_buf = NULL, *str_key;
+    word_t value;
+    size_t line_buf_size = 0;
+    int line_count = 0, var_count = 0;
+    ssize_t line_size;
+    FILE *fp = fopen(path, "r");
+
+    if (!fp) {
+        fprintf(stderr, "Error opening file '%s'\n", path);
+        return 0;
+    }
+
+    /* Get the first line of the file. */
+    line_size = getline(&line_buf, &line_buf_size, fp);
+
+    /* Loop through until we are done with the file. */
+    while (line_size >= 0 && var_count < MAX_VAR_COUNT) {
+        /* Increment our line count */
+        line_count++;
+
+        // get pointer to key, and integer value
+        str_key = strtok(line_buf, " ");
+        value = parse_int(strtok(NULL, " "));
+
+        // save value
+        values[var_count] = value;
+
+        // dynamically allocate key
+        if ((keys[var_count] = malloc(strlen(str_key) + 1)) == NULL) {
+            perror("");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(keys[var_count], str_key);
+
+        // add the key-value pair to the hash table
+        g_hash_table_insert(vars_ht, keys[var_count], &values[var_count]);
+
+        var_count++;
+
+        /* Get the next line */
+        line_size = getline(&line_buf, &line_buf_size, fp);
+    }
+
+    /* Free the allocated line buffer */
+    free(line_buf);
+    line_buf = NULL;
+
+    /* Close the file now that we are done with it */
+    fclose(fp);
+
+    return var_count;
+}
+
+void ht_destroy(ht_t *ht, char **keys, int count) {
+    g_hash_table_destroy(ht);
+    for (int i = 0; i < count; i ++)
+        free(keys[i]);
+}
+
 // DESCRIPTION: launches a debugger command line interface (a la GDB)
 //   on the device at the designated serial port
 void debug_cli(char *path, int serial_port) {
     char *line;
     int err = 0;
+
+    // create and populate a hash table of variables
+    char *keys[MAX_VAR_COUNT];
+    word_t values[MAX_VAR_COUNT];
+    ht_t *vars_ht = g_hash_table_new(g_str_hash, g_str_equal);
+
+    // get path to config file
+    const char *home_dir = getenv("HOME");
+    char config_path[strlen(home_dir) + strlen(REL_CONFIG_PATH) + 1];
+    strcpy(config_path, home_dir);
+    strcat(config_path, REL_CONFIG_PATH);
+    // populate variables from file
+    int vc = populate_vars(vars_ht, keys, values, config_path);
+
+    if (vc > 0) {
+        printf("\nUsing variables:\n");
+        for (int i = 0; i < vc; i++) {
+            printf("  %s = 0x%08X (%d)\n", keys[i], values[i], values[i]);
+        }
+    }
 
     printf("\n" CYAN "UART Debugger\n" RESET);
     printf("Enter 'h' for usage details.\n");
@@ -373,28 +459,29 @@ void debug_cli(char *path, int serial_port) {
         // quit/exit
         else if (match_strs(line, "q")) {
             free(line);
+            ht_destroy(vars_ht, keys, vc);
             return;
-            // I find myself constantly wanting to exit with "exit"
-            // so I've included that for as well
         } else if (match_strs(line, "exit")) {
             free(line);
+            ht_destroy(vars_ht, keys, vc);
             return;
-            // for exiting on EOD
         } else if (!line) {
             free(line);
+            ht_destroy(vars_ht, keys, vc);
             return;
-            // parse the line
         } else if (*line) {
             add_history(line);
-            err = parse_cmd(line, serial_port);
+            err = parse_cmd(line, serial_port, vars_ht);
         }
+
         // don't forget to free!
         free(line);
+        line = (char *)NULL;
     }
 }
 
 // god help us
-int parse_register_addr(char *tok) {
+int parse_register_addr(ht_t *vars, char *tok) {
     if (match_strs(tok, X0))
         return 0;
     else if (match_strs(tok, X1))
@@ -460,6 +547,5 @@ int parse_register_addr(char *tok) {
     else if (match_strs(tok, X31))
         return 31;
     else
-        return get_num(tok);
+        return get_num(vars, tok);
 }
-
