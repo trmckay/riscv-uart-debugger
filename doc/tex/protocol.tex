@@ -75,6 +75,8 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
     all of its changes should \emph{mcu\_busy} go low. Pipelined MCUs will also need to halt 
     instruction fetching, but will additionally need to flush the pipeline of all partially completed
     instructions. Once again, \emph{mcu\_busy} should only go low once the flush is completed.
+    The currrent program count should be fed into the \emph{d\_rd} port to inform the client of the
+    current point of execution.
 
         \begin{verbatim}
                  clk:  __|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯|__|¯¯
