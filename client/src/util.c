@@ -1,4 +1,7 @@
 #include "util.h"
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 int starts_with(char *cmp, char *str) {
     int l = strlen(str);

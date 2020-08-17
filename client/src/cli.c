@@ -1,4 +1,15 @@
 #include "cli.h"
+#include "types.h"
+#include "util.h"
+#include "debug.h"
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <readline/history.h>
+#include <readline/readline.h>
 
 // Array of breakpoints (also should be tracked in the module)
 // -1 = none

@@ -1,4 +1,14 @@
 #include "debug.h"
+#include "cli.h"
+#include "file_io.h"
+#include "serial.h"
+#include <dirent.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <readline/readline.h>
 
 // DESCRIPTION: Sends a command in the following format to the device.
 //              HOST                 TARGET
@@ -197,17 +207,17 @@ int connection_test(int serial_port, int n, int logging, int quiet) {
         printf("Accuracy: %.2f\n", acc);
         printf(RESET);
     }
-    
+
     if (do_log)
         printf("\nSee details in test.log\n");
 
     if (acc < 0.95) {
         if (!quiet) {
-            fprintf(
-                stderr,
-                "Error: Connection test failed due to low transmission accuracy\n");
-            fprintf(stderr, "Make sure the connection is secure or try a higher "
-                        "quality cable.\n");
+            fprintf(stderr, "Error: Connection test failed due to low "
+                            "transmission accuracy\n");
+            fprintf(stderr,
+                    "Make sure the connection is secure or try a higher "
+                    "quality cable.\n");
         }
         return 1;
     } else
@@ -314,12 +324,12 @@ int mcu_program(int serial_port, char *path, int fast) {
             fprintf(stderr, "Progress: %.1f%%\r", (float)i * 100 / n);
             // read word from file now, controller won't timeout
             if (read_word_file(f, &w)) {
-                fprintf(stderr, "Error: could not read word from file\n");   
+                fprintf(stderr, "Error: could not read word from file\n");
                 return 1;
             }
             // do not wait for reply
             if (send_word(serial_port, w)) {
-                fprintf(stderr, "Error: failed to send word %d\n", i);   
+                fprintf(stderr, "Error: failed to send word %d\n", i);
                 return 1;
             }
         }
@@ -330,10 +340,10 @@ int mcu_program(int serial_port, char *path, int fast) {
         for (int i = 0; i < n; i++) {
             fprintf(stderr, "Progress: %.1f%%\r", (float)i * 100 / n);
             if (read_word_file(f, &w)) {
-                fprintf(stderr, "Error: could not read word from file\n");   
+                fprintf(stderr, "Error: could not read word from file\n");
                 return 1;
             }
-            if (mcu_mem_write_word(serial_port, i*WORD_SIZE, w)) {
+            if (mcu_mem_write_word(serial_port, i * WORD_SIZE, w)) {
                 fprintf(stderr, "Error: failed to write word\n");
                 return 1;
             }

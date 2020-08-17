@@ -1,7 +1,14 @@
 #include "cli.h"
 #include "serial.h"
+#include "util.h"
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <strings.h>
+#include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 // TODO:
 // This file desparately needs to be refactored and cleaned.

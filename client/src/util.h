@@ -2,8 +2,6 @@
 #define UTIL_H
 
 #include "types.h"
-#include <stdlib.h>
-#include <string.h>
 #include <strings.h>
 
 #define match_strs(S1, S2) ((strcasecmp((S1), (S2)) == 0))

@@ -1,19 +1,6 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "debug.h"
-#include "util.h"
-#include "serial.h"
-#include <gmodule.h>
-#include <readline/history.h>
-#include <readline/readline.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
 #define YELLOW "\x1b[33m"
