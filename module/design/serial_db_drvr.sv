@@ -126,6 +126,7 @@ module serial_driver #(
             end // S_ECHO_CMD
 
             S_WAIT_ADDR: begin
+                r_time <= r_time + 1;
                 // recieve ready
                 if (l_rx_ready) begin
                     // save address
@@ -134,6 +135,11 @@ module serial_driver #(
                     r_ps <= S_ECHO_ADDR;
                     r_tx_start <= 1;
                     r_tx_word <= l_rx_word;
+                    r_time <= 0;
+                end
+                else if (r_time > TIMEOUT_COUNT) begin
+                    r_time <= 0;
+                    r_ps <= S_WAIT_CMD:
                 end
             end // S_WAIT
 
@@ -147,6 +153,7 @@ module serial_driver #(
             end // S_FINISH
 
             S_WAIT_DATA: begin
+                r_time <= r_time + 1;
                 // recieve ready
                 if (l_rx_ready) begin
                     // save data
@@ -155,6 +162,11 @@ module serial_driver #(
                     r_ps <= S_ECHO_DATA;
                     r_tx_start <= 1;
                     r_tx_word <= l_rx_word;
+                    r_time <= 0;
+                end
+                else if (r_time > TIMEOUT_COUNT) begin
+                    r_time <= 0;
+                    r_ps <= S_WAIT_CMD:
                 end
             end // S_WAIT_DATA
 
@@ -169,6 +181,7 @@ module serial_driver #(
             end // S_ECHO_DATA
 
             S_CTRLR: begin
+                r_time <= r_time + 1;
                 r_out_valid <= 0;
                 if (!ctrlr_busy && !r_out_valid) begin
                     // stop issue
@@ -176,6 +189,11 @@ module serial_driver #(
                     // start reply
                     r_tx_word <= d_rd;
                     r_tx_start <= 1;
+                    r_time <= 0;
+                end
+                else if (r_time > TIMEOUT_COUNT) begin
+                    r_ps <= S_WAIT_CMD:
+                    r_time <= 0;
                 end
             end // S_CTRLR
 
