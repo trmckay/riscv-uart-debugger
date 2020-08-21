@@ -18,3 +18,4 @@ client/.clangd
 .ccls
 uart-db-build
 *.tar.gz
+*.dvi
