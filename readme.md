@@ -11,7 +11,8 @@ Configured by default for a 50 MHz CPU communicating with a baud rate of 115200.
 - glib
 - readline
 - pkg-config
-- gcc 
+- gcc
+- make
 
 Ubuntu:
 
