@@ -13,15 +13,6 @@
 #include <string.h>
 #include <strings.h>
 
-// Array of breakpoints (also should be tracked in the module)
-// -1 = none
-// positive int = PC of breakpoint
-// only hardware breakpoints are supported right now
-int64_t bps[MAX_BREAK_PTS] = {-1, -1, -1, -1, -1, -1, -1, -1};
-
-// keeps track of pause state
-int paused = 0;
-
 // just print a message
 void unrecognized_cmd(char *line) {
     fprintf(stderr,
@@ -37,7 +28,7 @@ void help() { printf(HELP_MSG); }
 
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
 // RETURNS: 0 for success, non-zero for error
-int parse_cmd(char *line, int serial_port, ht_t *vars) {
+int parse_cmd(char *line, target_t *tg) {
     char *cmd, *s_a1, *s_a2;
     int ec;
     word_t pc;
@@ -58,17 +49,17 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage t <number>\n");
             return EXIT_FAILURE;
         }
-        if ((a1 = get_num(vars, s_a1)) < 1) {
+        if ((a1 = get_num(tg->variables, s_a1)) < 1) {
             fprintf(stderr, "Error: usage: t <number>\n");
             return EXIT_FAILURE;
         }
-        return connection_test(serial_port, a1, 1, 0);
+        return connection_test(tg->serial_port, a1, 1, 0);
     }
 
     // pause
     if (match_strs(cmd, PAUSE_TOKEN)) {
         printf("Pause MCU\n");
-        if (!(ec = mcu_pause(serial_port, &pc)))
+        if (!(ec = mcu_pause(tg->serial_port, &pc)))
             printf("pc = 0x%02X\n", pc);
         return ec;
     }
@@ -76,7 +67,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // resume
     if (match_strs(cmd, RESUME_TOKEN)) {
         printf("Resume MCU\n");
-        return (mcu_resume(serial_port));
+        return (mcu_resume(tg->serial_port));
     }
 
     // program
@@ -85,32 +76,32 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: pr <mem.bin> [-f]\n");
             return EXIT_FAILURE;
         }
-        if ((ec = mcu_pause(serial_port, &pc)))
+        if ((ec = mcu_pause(tg->serial_port, &pc)))
             return ec;
-        if ((ec = mcu_program(serial_port, s_a1, 1)))
+        if ((ec = mcu_program(tg->serial_port, s_a1, 1)))
             return ec;
-        if ((ec = mcu_reset(serial_port)))
+        if ((ec = mcu_reset(tg->serial_port)))
             return ec;
-        return mcu_resume(serial_port);
+        return mcu_resume(tg->serial_port);
     }
 
     // step
     if (match_strs(cmd, STEP_TOKEN)) {
         printf("Step\n");
-        if ((ec = mcu_pause(serial_port, &pc))) {
+        if ((ec = mcu_pause(tg->serial_port, &pc))) {
             return ec;
         }
-        return mcu_step(serial_port);
+        return mcu_step(tg->serial_port);
     }
 
     // reset
     if (match_strs(cmd, RESET_TOKEN)) {
         printf("Reset MCU\n");
-        if ((ec = mcu_pause(serial_port, &pc)))
+        if ((ec = mcu_pause(tg->serial_port, &pc)))
             return ec;
-        if ((ec = mcu_reset(serial_port)))
+        if ((ec = mcu_reset(tg->serial_port)))
             return ec;
-        return mcu_resume(serial_port);
+        return mcu_resume(tg->serial_port);
     }
 
     // status (not implemented)
@@ -118,7 +109,7 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
         printf("Request MCU status\n");
         fprintf(stderr, "Warning: not implemented\n");
         int s, err;
-        err = mcu_status(serial_port, &s);
+        err = mcu_status(tg->serial_port, &s);
         printf("Status: %d\n", s);
         return err;
     }
@@ -129,13 +120,13 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: b <pc>\n");
             return EXIT_FAILURE;
         }
-        a1 = get_num(vars, s_a1);
+        a1 = get_num(tg->variables, s_a1);
 
-        for (int i = 0; i < MAX_BREAK_PTS; i++) {
-            if (bps[i] < 0) {
-                bps[i] = a1;
+        for (int i = 0; i < tg->bp_cap; i++) {
+            if (tg->breakpoints[i] < 0) {
+                tg->breakpoints[i] = a1;
                 printf("Add breakpoint %d @ pc = 0x%08X\n", i, a1);
-                return mcu_add_breakpoint(serial_port, a1);
+                return mcu_add_breakpoint(tg->serial_port, a1);
             }
         }
         fprintf(stderr, "Error: max number of breakpoints reached\n");
@@ -148,11 +139,11 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: d <bp-num>\n");
             return EXIT_FAILURE;
         }
-        a1 = get_num(vars, s_a1);
-        if (a1 < MAX_BREAK_PTS && bps[a1] >= 0) {
-            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)bps[a1]);
-            int err = mcu_rm_breakpoint(serial_port, bps[a1]);
-            bps[a1] = -1;
+        a1 = get_num(tg->variables, s_a1);
+        if (a1 < tg->bp_cap && tg->breakpoints[a1] >= 0) {
+            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)tg->breakpoints[a1]);
+            int err = mcu_rm_breakpoint(tg->serial_port, tg->breakpoints[a1]);
+            tg->breakpoints[a1] = -1;
             return err;
         } else {
             fprintf(stderr, "Error: breakpoint does not exist\n");
@@ -163,13 +154,13 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     // clear breakpoints
     if (match_strs(cmd, BPCLR_TOKEN)) {
         printf("Clear breakpoints\n");
-        for (int i = 0; i < MAX_BREAK_PTS; i++) {
-            if (bps[i] >= 0) {
+        for (int i = 0; i < tg->bp_cap; i++) {
+            if (tg->breakpoints[i] >= 0) {
                 printf("Delete breakpoint %d @ pc = 0x%08X\n", i,
-                       (word_t)bps[i]);
-                if (mcu_rm_breakpoint(serial_port, bps[i]))
+                       (word_t)tg->breakpoints[i]);
+                if (mcu_rm_breakpoint(tg->serial_port, tg->breakpoints[i]))
                     return EXIT_FAILURE;
-                bps[i] = -1;
+                tg->breakpoints[i] = -1;
             }
         }
         return EXIT_SUCCESS;
@@ -179,8 +170,8 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
     if (match_strs(cmd, BPLIST_TOKEN)) {
         int none = 1;
         printf("List breakpoints\n");
-        for (int i = 0; i < MAX_BREAK_PTS; i++) {
-            if (bps[i] > 0)
+        for (int i = 0; i < tg->bp_cap; i++) {
+            if (tg->breakpoints[i] > 0)
                 none = 0;
         }
         if (none) {
@@ -188,9 +179,9 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             return EXIT_SUCCESS;
         }
         printf("NUM  |  PC\n");
-        for (int i = 0; i < MAX_BREAK_PTS; i++) {
-            if (bps[i] > 0)
-                printf(" %d   |  0x%08X\n", i, (word_t)bps[i]);
+        for (int i = 0; i < tg->bp_cap; i++) {
+            if (tg->breakpoints[i] > 0)
+                printf(" %d   |  0x%08X\n", i, (word_t)tg->breakpoints[i]);
         }
         return EXIT_SUCCESS;
     }
@@ -201,18 +192,18 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: rr <reg>\n");
             return EXIT_FAILURE;
         }
-        a1 = parse_register_addr(vars, s_a1);
+        a1 = parse_register_addr(tg->variables, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
         word_t r;
         int err;
-        if (!(err = mcu_reg_read(serial_port, a1, &r)))
+        if (!(err = mcu_reg_read(tg->serial_port, a1, &r)))
             printf("x%d = %d (0x%08X)\n", a1, r, r);
         return err;
     }
@@ -223,18 +214,18 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: rw <reg> <data>\n");
             return EXIT_FAILURE;
         }
-        a1 = parse_register_addr(vars, s_a1);
+        a1 = parse_register_addr(tg->variables, s_a1);
         if (a1 < 0 || a1 > RF_SIZE) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
-        a2 = get_num(vars, s_a2);
+        a2 = get_num(tg->variables, s_a2);
         int err;
-        if (!(err = mcu_reg_write(serial_port, a1, a2)))
+        if (!(err = mcu_reg_write(tg->serial_port, a1, a2)))
             printf("x%d <- %d (0x%08X)\n", a1, a2, a2);
         return err;
     }
@@ -245,18 +236,18 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
-        a1 = get_num(vars, s_a1);
+        a1 = get_num(tg->variables, s_a1);
         if (a1 < 0 || a1 > 0xFFFFFFFF) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
         word_t r;
         int err;
-        if (!(err = mcu_mem_read_word(serial_port, a1, &r)))
+        if (!(err = mcu_mem_read_word(tg->serial_port, a1, &r)))
             printf("MEM[0x%08X] = %d (0x%08X)\n", a1, r, r);
         return err;
     }
@@ -267,18 +258,18 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
             return EXIT_FAILURE;
         }
-        a1 = get_num(vars, s_a1);
-        a2 = get_num(vars, s_a2);
+        a1 = get_num(tg->variables, s_a1);
+        a2 = get_num(tg->variables, s_a2);
         if (a1 < 0 || a1 > 0xFFFFFFFF) {
             fprintf(stderr, "Error: address out of range\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
         int err;
-        if (!(err = mcu_mem_write_word(serial_port, a1, a2)))
+        if (!(err = mcu_mem_write_word(tg->serial_port, a1, a2)))
             printf("MEM[0x%08X] <- %d (0x%08X)\n", a1, a2, a2);
         return err;
     }
@@ -289,14 +280,14 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: d <pc>\n");
             return EXIT_FAILURE;
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
-        a1 = get_num(vars, s_a1);
+        a1 = get_num(tg->variables, s_a1);
         byte_t r;
         int err;
-        if (!(err = mcu_mem_read_byte(serial_port, a1, &r)))
+        if (!(err = mcu_mem_read_byte(tg->serial_port, a1, &r)))
             printf("MEM[0x%08X] = %d (0x%04X)\n", a1, r, r);
         return err;
     }
@@ -307,16 +298,16 @@ int parse_cmd(char *line, int serial_port, ht_t *vars) {
             fprintf(stderr, "Error: usage: mww <addr> <data>\n");
             return EXIT_FAILURE;
         }
-        if ((a1 = get_num(vars, s_a1)) < 0) {
+        if ((a1 = get_num(tg->variables, s_a1)) < 0) {
             fprintf(stderr, "Error: address must be positive integer\n");
         }
-        if (mcu_pause(serial_port, &pc)) {
+        if (mcu_pause(tg->serial_port, &pc)) {
             fprintf(stderr, "Error: failed to pause MCU\n");
             return EXIT_FAILURE;
         }
-        a2 = get_num(vars, s_a2);
+        a2 = get_num(tg->variables, s_a2);
         int err;
-        if (!(err = mcu_mem_write_byte(serial_port, a1, a2)))
+        if (!(err = mcu_mem_write_byte(tg->serial_port, a1, a2)))
             printf("MEM[0x%08X] <- %d (0x%04X)\n", a1, a2, a2);
         return err;
     }
@@ -352,6 +343,21 @@ void debug_cli(char *path, int serial_port) {
         }
     }
 
+    // Array of breakpoints (also should be tracked in the module)
+    // -1 = none
+    // positive int = PC of breakpoint
+    // only hardware breakpoints are supported right now
+    int64_t bps[MAX_BREAK_PTS] = {-1, -1, -1, -1, -1, -1, -1, -1};
+
+    // create a packed structure for target
+    target_t tg;
+    tg.serial_port = serial_port;
+    tg.variables = vars_ht;
+    tg.paused = 0;
+    tg.breakpoints = bps;
+    tg.bp_cap = MAX_BREAK_PTS;
+    tg.pipe = 0;
+
     printf("\n" CYAN "UART Debugger\n" RESET);
     printf("Enter 'h' for usage details.\n");
 
@@ -359,7 +365,7 @@ void debug_cli(char *path, int serial_port) {
     while (1) {
         // prompt
         printf("\nuart-db @ %s", path);
-        if (paused)
+        if (tg.paused)
             printf(" (paused)\n");
         else
             printf("\n");
@@ -391,7 +397,7 @@ void debug_cli(char *path, int serial_port) {
             return;
         } else if (*line) {
             add_history(line);
-            err = parse_cmd(line, serial_port, vars_ht);
+            err = parse_cmd(line, &tg);
         }
 
         // don't forget to free!
