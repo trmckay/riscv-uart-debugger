@@ -12,32 +12,32 @@ module controller_fsm #(
     TIMEOUT  = 200   // timeout in ms
     )(
     // INPUTS
-    input clk,
+    input var clk,
 
     // sdec -> controller
-    input logic [3:0] cmd,
-    input logic [31:0] addr,
-    input logic in_valid,
+    input var logic [3:0] cmd,
+    input var logic [31:0] addr,
+    input var logic in_valid,
 
     // MCU -> controller
-    input logic [31:0] pc,
-    input logic mcu_busy,
+    input var logic [31:0] pc,
+    input var logic mcu_busy,
 
     // OUTPUTS
     // controller -> MCU
-    output reg pause = 0,
-    output reg reset = 0,
-    output reg resume = 0,
-    output reg out_valid = 0,
-    output reg reg_rd = 0,
-    output reg mem_rd = 0,
-    output reg reg_wr = 0,
-    output reg mem_wr = 0,
-    output reg [1:0] mem_size = 2,
+    output var logic pause = 0,
+    output var logic reset = 0,
+    output var logic resume = 0,
+    output var logic out_valid = 0,
+    output var logic reg_rd = 0,
+    output var logic mem_rd = 0,
+    output var logic reg_wr = 0,
+    output var logic mem_wr = 0,
+    output var logic [1:0] mem_size = 2,
 
     // controller -> sdec
-    output ctrlr_busy,
-    output reg error = 0
+    output var logic ctrlr_busy,
+    output var logic error = 0
 );
 
     // command codes
@@ -59,32 +59,36 @@ module controller_fsm #(
     localparam TIMEOUT_COUNT  = TIMEOUT*CLK_RATE*'d1000;
 
     // keep track of mcu paused state
-    reg r_mcu_paused = 0;
-    reg r_ctrlr_busy = 0;
+    logic r_mcu_paused = 0;
+    logic r_ctrlr_busy = 0;
     assign ctrlr_busy = (r_ctrlr_busy || in_valid);
 
-    reg [31:0] r_time = 0;
+    logic [31:0] r_time = 0;
 
     // breakpoints
     localparam MAX_BREAK_PTS = 8;
     // [32]=valid; [31:0]=pc
     logic [32:0] break_pts[MAX_BREAK_PTS];
-    initial for (int i = 0; i < MAX_BREAK_PTS; i++)
-        break_pts[i] = 0;
+    initial begin
+        for (int i = 0; i < MAX_BREAK_PTS; i++) begin
+            break_pts[i] = 0;
+        end
+    end
     logic l_bp_hit;
-    reg r_bp_en = 1;
+    logic r_bp_en = 1;
 
     localparam S_IDLE = 1'b0;
     localparam S_WAIT = 1'b1;
     // start in idle
-    reg r_ps = S_IDLE;
+    logic r_ps = S_IDLE;
 
     // watch for breakpoints
     always_comb begin
         l_bp_hit = 0;
         for (int i = 0; i < MAX_BREAK_PTS; i++) begin
-            if ((break_pts[i][32] == 1) && (break_pts[i][31:0] == pc))
+            if ((break_pts[i][32] == 1) && (break_pts[i][31:0] == pc)) begin
                 l_bp_hit = 1;
+            end
         end
     end
 
@@ -186,6 +190,11 @@ module controller_fsm #(
                             reg_wr    <= 1;
                             out_valid <= 1;
                             r_ps      <= S_WAIT;
+                        end
+
+                        default: begin
+                            reg_wr    <= 0;
+                            mem_wr    <= 0;
                         end
                     endcase // case(cmd)
                 end // if (in_valid)

@@ -31,30 +31,30 @@ module debug_controller #(
     CLK_RATE = 50,   // clock rate (MHz)
     TIMEOUT  = 200   // timeout (ms)
     )(
-    input clk,
+    input var clk,
 
     // user <-> debugger (via serial)
-    input srx,
-    output stx,
+    input var srx,
+    output var stx,
 
     // MCU -> debugger
-    input [31:0] pc,
-    input mcu_busy,
-    input [31:0] d_rd,
-    input error,
+    input var [31:0] pc,
+    input var mcu_busy,
+    input var [31:0] d_rd,
+    input var error,
 
     // debugger -> MCU
-    output [31:0] d_in,
-    output [31:0] addr,
-    output pause,
-    output resume,
-    output reset,
-    output reg_rd,
-    output reg_wr,
-    output mem_rd,
-    output mem_wr,
-    output [1:0] mem_size,
-    output valid
+    output var [31:0] d_in,
+    output var [31:0] addr,
+    output var pause,
+    output var resume,
+    output var reset,
+    output var reg_rd,
+    output var reg_wr,
+    output var mem_rd,
+    output var mem_wr,
+    output var [1:0] mem_size,
+    output var valid
 );
 
     localparam ERR_TIMEOUT = 2;
@@ -62,11 +62,11 @@ module debug_controller #(
     localparam ERR_NONE = 0;
 
     logic l_ctrlr_busy, l_serial_valid, l_ctrlr_error;
-    reg [3:0] r_cmd;
-    reg [31:0] r_addr, r_d_in;
+    logic [3:0] r_cmd;
+    logic [31:0] r_addr, r_d_in;
     logic [3:0] l_cmd;
     logic [31:0] l_addr, l_d_in;
-    reg [1:0] r_ec;
+    logic [1:0] r_ec;
 
     assign addr = l_addr;
     assign d_in = l_d_in;
@@ -79,10 +79,12 @@ module debug_controller #(
             r_d_in <= l_d_in;
             r_ec <= ERR_NONE;
         end
-        if (l_ctrlr_error)
+        if (l_ctrlr_error) begin
             r_ec <= ERR_TIMEOUT;
-        if (error)
-            r_ec <= ERR_MCU;   
+        end
+        if (error) begin
+            r_ec <= ERR_MCU;
+        end
     end
 
     // error code to be transmitted back to client
