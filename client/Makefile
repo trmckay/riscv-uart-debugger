@@ -12,8 +12,7 @@ rv64:
 	$(CC) src/*.c $(CFLAGS) -D RV64 -o $(TARGET)
 
 install:
-	mkdir -p ${HOME}/.local/bin
-	cp $(TARGET) ${HOME}/.local/bin/
+	install -Dm 755 build/uart-db /usr/bin/uart-db
 
 clean:
 	rm -rf $(BUILD)
