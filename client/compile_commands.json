@@ -1,98 +1,121 @@
 [
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/serial.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/serial.c"
-    },
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/file_io.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/file_io.c"
-    },
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/debug.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/debug.c"
-    },
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/cli.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/cli.c"
-    },
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/util.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/util.c"
-    },
-    {
-        "arguments": [
-            "gcc",
-            "-c",
-            "-Wall",
-            "-I/usr/include/glib-2.0",
-            "-I/usr/lib/glib-2.0/include",
-            "-D",
-            "RV32",
-            "-o",
-            "build/uart-db",
-            "src/main.c"
-        ],
-        "directory": "/home/trevor/Development/uart-db/client",
-        "file": "src/main.c"
-    }
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/cli.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/cli.c",
+    "output": "/home/trevor/development/uart-db/client/src/cli.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/data.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/data.c",
+    "output": "/home/trevor/development/uart-db/client/src/data.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/debug.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/debug.c",
+    "output": "/home/trevor/development/uart-db/client/src/debug.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/file_io.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/file_io.c",
+    "output": "/home/trevor/development/uart-db/client/src/file_io.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/main.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/main.c",
+    "output": "/home/trevor/development/uart-db/client/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/serial.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/serial.c",
+    "output": "/home/trevor/development/uart-db/client/src/serial.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "src/util.c",
+      "-Wall",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/glib-2.0/include",
+      "-D",
+      "RV32",
+      "-o",
+      "build/uart-db"
+    ],
+    "directory": "/home/trevor/development/uart-db/client",
+    "file": "/home/trevor/development/uart-db/client/src/util.c",
+    "output": "/home/trevor/development/uart-db/client/src/util.o"
+  }
 ]
