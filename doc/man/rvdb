@@ -1,0 +1,85 @@
+.\" Manpage for rvdb
+.\" trmckay@calpoly.edu
+
+.TH rvdb 1 "17 Dec, 2020" "1.3" "rvdb man page"
+
+.SH NAME
+rvdb [DEVICE] \- start debugging a device
+
+.SH SYNOPSIS
+Debug a RISC-V target over serial UART. Devices are generally \
+located at /dev/ttyS* or /dev/ttyUSB*.
+
+.SH OPTIONS
+
+--help \- view usage details
+
+.SH USAGE
+
+Once the debugger has connected to a device and verified the stability \
+of the connection the following commands can be used:
+
+.TP
+.BR h
+View the help message.
+
+.TP
+.BR p
+Pause execution.
+
+.TP
+.BR r
+Resume execution.
+
+.TP
+.BR pr " " {\fIpath/to/bin\fR}
+Program with a binary.
+
+.TP
+.BR rst
+Reset to the beginning of the program.
+
+.TP
+.BR b " " {\fIpc\fR}
+Add a breakpoint at the given PC value.
+
+.TP
+.BR d " " {\fIbreakpoint\fR}
+Delete the given breakpoint.
+
+.TP
+.BR bl
+List all breakpoints.
+
+.TP
+.BR rr " " {\fInum\fR}
+Read the given register.
+
+.TP
+.BR rw " " {\fInum\fR} " " {\fIdata\fR}
+Write the given data to the given register.
+
+.TP
+.BR mrw " " {\fIaddr\fR}
+Read a word from the given address in memory.
+
+.TP
+.BR mww " " {\fIaddr\fR}  " " {\fIdata\fR}
+Write the given data as a word to the given address in memory.
+
+.TP
+.BR mrb " " {\fIaddr\fR}
+Read a byte from the given address in memory.
+
+.TP
+.BR mwb " " {\fIaddr\fR} " " {\fIdata\fR}
+Write the given data as a byte to the given address in memory.
+
+Note: numerical arguments can be entered as decimal or hex with a '0x' prefix.
+
+.SH BUGS
+Stepping behaves unpredictably.
+Breakpoints cannot be cleared once added.
+
+.SH AUTHOR
+Trevor McKay (trmckay@calpoly.edu)
