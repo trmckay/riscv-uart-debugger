@@ -1,56 +1,70 @@
 # RISC-V UART Debugger
 
-### About
+## About
 
 Control and debug a RISC-V MCU over USB UART.
 
-Configured by default for a 50 MHz CPU communicating with a baud rate of 115200. This can be adjusted by changing the BAUD definion in client/src/serial.h and the BAUD/CLK_RATE parameters of the mcu_controller module.
+Configured by default for a 50 MHz CPU communicating with a baud rate of 115200.
+This can be adjusted by changing the BAUD definition in `client/src/serial.h` and the `BAUD`/`CLK_RATE`
+parameters of the `mcu_controller` module.
 
-### Build dependencies
 
-- glib
-- readline
+## How to build
 
-Ubuntu:
+The following programs are needed:
 
-```
-sudo apt install readline-dev libglib2.0-dev
-```
+- `automake`
+- `autoconf`
+- `libtool`
+- `pkgconfig`
+- GNU Make
+- a C compiler
 
-Arch:
+The following libraries are needed:
 
-```
-sudo pacman -S lib32-readline glib2
-```
+- `readline` >= 8.1.0
+- `glib-2.0` >= 2.24.1
 
-### Installation
-
-The best way is to build and install from source:
-
-```
-git clone git@github.com:trmckay/riscv-uart-debugger.git
-cd riscv-uart-debugger/client
-./INSTALL
-```
-
-Alternatively, see releases for binaries.
-
-### Usage
-
-Launch the tool with:
+Once the dependencies are satisfied run
 
 ```
-uart-db <device>
+git clone https://github.com/trmckay/riscv-uart-debugger
+cd riscv-uart-debugger
 ```
 
-Or to autodetect ports, omit the device.
+to download the source.
 
-Your device is likely connected to /dev/ttyUSBX or /dev/ttySX.
-Once in the tool, type 'h' or 'help' for more information.
+Then, run
 
-### Protocol implementation
+```
+./bootstrap.sh
+mkdir -p build
+cd build
+../configure [--prefix="/path/to/install"]
+```
 
-Documentation source be built with pdflatex or your choice of LaTeX compiler. Prebuilt PDFs can also be found in the releases.
+to set up the build environment.
 
-Implement the protocol as defined in the doc on your MCU. Then, add the proper constraints to
-forward your UART tx/sx connections to the mcu_controller module.
+Finally, build and install with
+
+```
+make
+[sudo] make install
+```
+
+
+## Usage
+
+Launch with `rvdb`.
+
+See `man rvdb` for more information.
+
+
+## Protocol implementation
+
+Documentation source be built with `pdflatex` or your choice of LaTeX compiler.
+Pre-built PDFs can also be found in the releases.
+
+Implement the protocol as defined in the doc on your MCU.
+Then, add the proper constraints to
+forward your UART `tx`/`sx` connections to the `mcu_controller` module.
