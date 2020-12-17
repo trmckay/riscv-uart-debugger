@@ -2,6 +2,7 @@
 #define DEBUG_H
 
 #include "types.h"
+#include "data.h"
 
 #define FN_NONE 0x00
 #define FN_PAUSE 0x01
@@ -22,6 +23,15 @@
 #define ERR_MCU     1
 #define ERR_TIMEOUT 2
 #define ERR_CLIENT  3
+
+typedef struct tg {
+    int serial_port;
+    ht_t *variables;
+    int paused;
+    int64_t *breakpoints;
+    unsigned short bp_cap;
+    int pipe;
+} target_t;
 
 int connection_test(int serial_port, int n, int do_log, int quiet);
 int mcu_program(int serial_port, char *path, int fast);

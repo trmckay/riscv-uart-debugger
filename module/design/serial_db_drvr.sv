@@ -13,26 +13,26 @@ module serial_driver #(
     TIMEOUT = 200   // timeout in ms
     )(
     // INPUTS
-    input clk,
-    input reset,
+    input var               clk,
+    input var               reset,
 
     // user <-> serial
-    input srx,
-    output stx,
+    input var               srx,
+    output var              stx,
 
     // controller -> sdec
-    input ctrlr_busy,
+    input var logic         ctrlr_busy,
 
     // mcu -> sdec
-    input [31:0] d_rd,
-    input [1:0] error,
+    input var logic  [31:0] d_rd,
+    input var logic  [1:0]  error,
 
     // OUTPUTS
     // sdrv -> controller
-    output [3:0]  cmd,
-    output [31:0] addr,
-    output [31:0] d_in,
-    output out_valid
+    output var logic [3:0]  cmd,
+    output var logic [31:0] addr,
+    output var logic [31:0] d_in,
+    output var logic        out_valid
 );
 
     // used to escape normal recieve-echo routine and enter programming mode
@@ -53,8 +53,8 @@ module serial_driver #(
         .rx_word(l_rx_word)
     );
 
-    reg [31:0] r_tx_word;
-    reg r_tx_start = 0; // one-shot
+    logic [31:0] r_tx_word;
+    logic r_tx_start = 0; // one-shot
     logic l_tx_idle;
 
     uart_tx_word #(.CLK_RATE(CLK_RATE), .BAUD(BAUD)) tx(
@@ -82,10 +82,10 @@ module serial_driver #(
 
     STATE r_ps = S_WAIT_CMD;
 
-    reg [31:0] r_addr, r_d_in;
-    reg [3:0] r_cmd;
-    reg r_out_valid = 0;
-    reg [31:0] r_time = 0;
+    logic [31:0] r_addr, r_d_in;
+    logic [3:0] r_cmd;
+    logic r_out_valid = 0;
+    logic [31:0] r_time = 0;
 
     assign out_valid = r_out_valid;
     assign cmd = r_cmd;

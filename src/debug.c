@@ -348,7 +348,7 @@ int mcu_program(int serial_port, char *path, int fast) {
                 return 1;
             }
         }
-        readline("Programming complete! Press enter to continue.");
+        readline("Programming complete! Press enter to continue... ");
     }
 
     else {

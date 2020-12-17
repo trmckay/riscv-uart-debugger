@@ -8,10 +8,9 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
 
-\title{RISC-V UART Debugger Protocol}
+\title{RISC-V RV32I UART Debugger Protocol}
 \author{Trevor McKay}
 \date{August 2020}
-
 \graphicspath{{./figures/}}
 
 \begin{document}
@@ -72,7 +71,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
     \emph{mcu\_busy} signal should be asserted as soon as \emph{pause} and \emph{valid} are both
     high. For multicycle MCUs, the MCU should not fetch any more instructions (this can be done by
     injecting no-ops) once the pause begins. Only when the current instruction has committed
-    all of its changes should \emph{mcu\_busy} go low. Pipelined MCUs will also need to halt 
+    all of its changes should \emph{mcu\_busy} go low. Pipelined MCUs will also need to halt
     instruction fetching, but will additionally need to flush the pipeline of all partially completed
     instructions. Once again, \emph{mcu\_busy} should only go low once the flush is completed.
     The currrent program count should be fed into the \emph{d\_rd} port to inform the client of the
@@ -146,7 +145,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
         \end{verbatim}
 
     \item\textbf{rf\_wr}\\
-    The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy} 
+    The MCU should write the data \emph{d\_in} to the memory at \emph{addr}. The \emph{mcu\_busy}
     should go high at or before the next positive clock edge until the memory write is complete.
     This should only take one cycle for the register file; if so, \emph{mcu\_busy} will not need to
     be asserted.
@@ -158,7 +157,7 @@ same time, it may be helpful to set \emph{error} and perhaps even do some handli
 
             mcu_busy:  ___________________________________
 
-                d_in:  <________ 0x17 _____><_____ Z ____> 
+                d_in:  <________ 0x17 _____><_____ Z ____>
 
               reg_wr:  ______________|¯¯¯¯¯¯|______________
 
@@ -178,7 +177,7 @@ Not only does it better decompose the control operations, but it can be useful t
 for interrupts.
 
 Additionally, have a register or logic variable in the MCU to keep track of whether the pipeline
-is performing an operation. Quickly being able to determine this by looking at a single variable 
+is performing an operation. Quickly being able to determine this by looking at a single variable
 will make it easier to MUX between the MCU's internal inputs and the controller's inputs for
 the memory and register file. The controller will hold signals except for \emph{valid}, so it is not
 necessary to keep track of the type of operation.
