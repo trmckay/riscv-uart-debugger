@@ -1,19 +1,8 @@
-CFLAGS= --pedantic -Wall
-LDFLAGS=-L/usr/include -lreadline `pkg-config --cflags --libs glib-2.0`
-bin_PROGRAMS = uartdb
-uartdb_SOURCES = \
-    cli.c \
-    cli.h \
-    data.c \
-    data.h \
-    debug.c \
-    debug.h \
-    file_io.c \
-    file_io.h \
-    main.c \
-    Makefile.am \
-    serial.c \
-    serial.h \
-    types.h \
-    util.c \
-    util.h
+bin_PROGRAMS = rvdb
+rvdb_CFLAGS = $(DEPS_CFLAGS) --pedantic -Wall
+rvdb_LDADD = $(DEPS_LIBS) -L/usr/include -lreadline
+rvdb_SOURCES = \
+    cli.c cli.h data.c data.h \
+    debug.c debug.h file_io.c file_io.h \
+    main.c serial.c serial.h types.h \
+    util.c util.h
