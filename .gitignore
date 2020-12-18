@@ -122,3 +122,4 @@ Makefile
 # build location
 build
 rvdb
+compile_commands.json
