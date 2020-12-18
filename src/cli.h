@@ -14,34 +14,34 @@
 
 #define REL_CONFIG_PATH "/.config/rvdb/config"
 
-#define CTEST_TOKEN    "t"
-#define PAUSE_TOKEN    "p"
-#define RESUME_TOKEN   "r"
-#define PROGRAM_TOKEN  "pr"
-#define STEP_TOKEN     "s"
-#define RESET_TOKEN    "rst"
-#define STATUS_TOKEN   "st"
-#define BPADD_TOKEN    "b"
-#define BPDEL_TOKEN    "del"
-#define BPCLR_TOKEN    "bc"
-#define BPLIST_TOKEN   "bl"
-#define REG_RD_TOKEN   "rr"
-#define REG_WR_TOKEN   "rw"
+#define CTEST_TOKEN "t"
+#define PAUSE_TOKEN "p"
+#define RESUME_TOKEN "r"
+#define PROGRAM_TOKEN "pr"
+#define STEP_TOKEN "s"
+#define RESET_TOKEN "rst"
+#define STATUS_TOKEN "st"
+#define BPADD_TOKEN "b"
+#define BPDEL_TOKEN "del"
+#define BPCLR_TOKEN "bc"
+#define BPLIST_TOKEN "bl"
+#define REG_RD_TOKEN "rr"
+#define REG_WR_TOKEN "rw"
 #define MEM_RD_W_TOKEN "mrw"
 #define MEM_WR_W_TOKEN "mww"
 #define MEM_RD_B_TOKEN "mrb"
 #define MEM_WR_B_TOKEN "mwb"
 
-#define X0  "zero"
-#define X1  "ra"
-#define X2  "sp"
-#define X3  "gp"
-#define X4  "tp"
-#define X5  "t0"
-#define X6  "t1"
-#define X7  "t2"
-#define X8  "s0"
-#define X9  "s1"
+#define X0 "zero"
+#define X1 "ra"
+#define X2 "sp"
+#define X3 "gp"
+#define X4 "tp"
+#define X5 "t0"
+#define X6 "t1"
+#define X7 "t2"
+#define X8 "s0"
+#define X9 "s1"
 #define X10 "a0"
 #define X11 "a1"
 #define X12 "a2"
@@ -65,12 +65,23 @@
 #define X30 "t5"
 #define X31 "t6"
 
-#define HELP_MSG \
-"RISC-V UART Debugger (rvdb) v1.4 | Trevor McKay <trmckay@calpoly.edu>\n\n"\
-"USAGE\n"\
-"    rvdb [device]\n\n"\
-"MORE INFO\n"\
-"    man rvdb\n"
+#define HELP_MSG                                                               \
+    "RISC-V UART Debugger (rvdb) v1.4 | Trevor McKay "                         \
+    "<trmckay@calpoly.edu>\n\n"                                                \
+    "USAGE\n"                                                                  \
+    "    rvdb [device]\n\n"                                                    \
+    "MORE INFO\n"                                                              \
+    "    man rvdb\n"
+
+#define HELP() printf(HELP_MSG)
+
+#define INVLD_CMD(L)                                                           \
+    fprintf(stderr,                                                            \
+            "Error: unrecognized command\n"                                    \
+            "Execute external shell commands with a leading '!'.\n"            \
+            "Example: '! %s' or '!%s'\n"                                       \
+            "Enter 'h' for more information.\n",                               \
+            line, line);
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);

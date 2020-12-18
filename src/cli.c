@@ -4,27 +4,14 @@
 #include "types.h"
 #include "util.h"
 #include <pwd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-
-// just print a message
-void unrecognized_cmd(char *line) {
-    fprintf(stderr,
-            "Error: unrecognized command\n"
-            "Execute external shell commands with a leading '!'.\n"
-            "Example: '! %s' or '!%s'\n"
-            "Enter 'h' for more information.\n",
-            line, line);
-}
-
-// long-form help message
-void help() { printf(HELP_MSG); }
 
 // DESCRIPTION: takes the command as a string, and applies it to the serial port
 // RETURNS: 0 for success, non-zero for error
@@ -141,7 +128,8 @@ int parse_cmd(char *line, target_t *tg) {
         }
         a1 = get_num(tg->variables, s_a1);
         if (a1 < tg->bp_cap && tg->breakpoints[a1] >= 0) {
-            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1, (word_t)tg->breakpoints[a1]);
+            printf("Delete breakpoint %d @ pc = 0x%08X\n", a1,
+                   (word_t)tg->breakpoints[a1]);
             int err = mcu_rm_breakpoint(tg->serial_port, tg->breakpoints[a1]);
             tg->breakpoints[a1] = -1;
             return err;
@@ -313,7 +301,7 @@ int parse_cmd(char *line, target_t *tg) {
     }
 
     // print unrecognized cmd msg and return error
-    unrecognized_cmd(line_copy);
+    INVLD_CMD(line_copy);
     return EXIT_FAILURE;
 }
 
@@ -378,7 +366,7 @@ void debug_cli(char *path, int serial_port) {
 
         // help message
         else if (match_strs(line, "h")) {
-            help();
+            HELP_MSG;
             err = 0;
         }
 

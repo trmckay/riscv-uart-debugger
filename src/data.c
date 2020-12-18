@@ -5,9 +5,9 @@
 #include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <readline/readline.h>
 #include <string.h>
 #include <strings.h>
+#include <readline/readline.h>
 
 // searches defined variables, or parses as integer
 word_t get_num(ht_t *vars, char *tok) {

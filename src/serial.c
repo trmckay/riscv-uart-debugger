@@ -7,6 +7,7 @@
 // Original terminal config code from:
 //     https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html
 
+#include "serial.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -21,7 +22,6 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
-#include "serial.h"
 
 term_sa saved_attributes;
 

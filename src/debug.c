@@ -46,8 +46,7 @@ int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
         return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
-        fprintf(stderr,
-                "Error: could not read echo of command bytes\n");
+        fprintf(stderr, "Error: could not read echo of command bytes\n");
         return ERR_CLIENT;
     }
     if (r != cmd) {
@@ -61,8 +60,7 @@ int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
         return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
-        fprintf(stderr,
-                "Error: could not read echo of command bytes\n");
+        fprintf(stderr, "Error: could not read echo of command bytes\n");
         return ERR_CLIENT;
     }
     // only check that echo matches if argc includes this
@@ -77,8 +75,7 @@ int send_cmd(int serial_port, word_t cmd, word_t addr, word_t data, int argc,
         return ERR_CLIENT;
     }
     if (read_word(serial_port, &r)) {
-        fprintf(stderr,
-                "Error: could not read echo of command bytes\n");
+        fprintf(stderr, "Error: could not read echo of command bytes\n");
         return ERR_CLIENT;
     }
     // only check that echo matches if argc includes this

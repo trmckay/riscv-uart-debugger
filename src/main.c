@@ -1,14 +1,14 @@
 #include "cli.h"
+#include "debug.h"
 #include "serial.h"
 #include "util.h"
-#include "debug.h"
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <strings.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
-#include <dirent.h>
+#include <unistd.h>
 
 // TODO:
 // This file desparately needs to be refactored and cleaned.
@@ -58,7 +58,6 @@ void parse_args(int argc, char *argv[], char **path) {
 
     else
         *path = argv[1];
-
 }
 
 void start_debugger(char *path) {
@@ -74,7 +73,8 @@ void start_debugger(char *path) {
         exit(EXIT_FAILURE);
     }
 
-    printf("\nA stable connection has been established. Launching debugger...\n");
+    printf(
+        "\nA stable connection has been established. Launching debugger...\n");
 
     // launch debug cli on device at serial_port
     debug_cli(path, serial_port);
@@ -91,8 +91,7 @@ int try_open(char *path) {
         restore_term(serial_port);
         close(serial_port);
         return 0;
-    }
-    else {
+    } else {
         close(serial_port);
         return 1;
     }
@@ -107,7 +106,8 @@ void autodetect_and_start() {
 
     if ((dir = opendir("/dev")) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
-            if (starts_with(ent->d_name, "ttyS") || starts_with(ent->d_name, "ttyUSB")) {
+            if (starts_with(ent->d_name, "ttyS") ||
+                starts_with(ent->d_name, "ttyUSB")) {
                 strcat(full_path, ent->d_name);
                 if (try_open(full_path)) {
                     printf("Found: %s\n", full_path);
@@ -115,7 +115,7 @@ void autodetect_and_start() {
                     closedir(dir);
                     return;
                 }
-            full_path[5] = 0;
+                full_path[5] = 0;
             }
         }
         closedir(dir);

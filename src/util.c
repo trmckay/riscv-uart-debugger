@@ -23,6 +23,6 @@ int parse_int(char *str) {
         return (word_t)strtol(str, NULL, 0);
     }
     // decimal formatted
-       else
+    else
         return atoi(str);
 }
