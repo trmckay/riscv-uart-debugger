@@ -364,7 +364,7 @@ void debug_cli(char *path, int serial_port) {
     // run until EOD is read
     while (1) {
         // prompt
-        printf("\nuart-db @ %s", path);
+        printf("\nrvdb @ %s", path);
         if (tg.paused)
             printf(" (paused)\n");
         else

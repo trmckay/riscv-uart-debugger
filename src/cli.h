@@ -12,7 +12,7 @@
 #define MAX_BREAK_PTS 8
 #define MAX_VAR_COUNT 256
 
-#define REL_CONFIG_PATH "/.config/uart-db/config"
+#define REL_CONFIG_PATH "/.config/rvdb/config"
 
 #define CTEST_TOKEN    "t"
 #define PAUSE_TOKEN    "p"
@@ -66,32 +66,11 @@
 #define X31 "t6"
 
 #define HELP_MSG \
-"============================ ABOUT ====================================\n"\
-"RISC-V UART Debugger\n"\
-"Version: 1.4\n"\
-"Author: Trevor McKay | trmckay@calpoly.edu\n\n"\
-\
-"============================ USAGE ====================================\n"\
-"Run with 'uart-db <device> to connect to a specific target.\n"\
-"Run with no arguments to autodetect a target.\n"\
-"Type a command and its arguments, then press enter to execute.\n"\
-"You can also execute external shell commands by escaping them with '!'.\n\n"\
-\
-"======================= LIST OF COMMANDS ==============================\n"\
-" h                   : view this message\n"\
-" p                   : pause execution\n"\
-" r                   : resume execution\n"\
-" pr <mem.bin>        : program with the specified binary file\n"\
-" rst                 : reset execution\n"\
-" st                  : request MCU status\n"\
-" b <pc>              : add a breakpoint to the specified program counter\n"\
-" d <num>             : delete the specified breakpoint\n"\
-" bl                  : list breakpoints\n"\
-" rr <num>            : read the data at the register\n"\
-" rw <num> <data>     : write the data to the register\n"\
-" mww <addr> <data>   : write a word (4 bytes) to the memory\n"\
-" mrb <addr>          : read a byte from the memory\n"\
-" mwb <addr> >data>   : write a byte to the memory\n"
+"RISC-V UART Debugger (rvdb) v1.4 | Trevor McKay <trmckay@calpoly.edu>\n\n"\
+"USAGE\n"\
+"    rvdb [device]\n\n"\
+"MORE INFO\n"\
+"    man rvdb\n"
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);

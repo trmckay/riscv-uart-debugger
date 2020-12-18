@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 void usage(char *msg) {
     if (msg != NULL)
         fprintf(stderr, "%s\n", msg);
-    fprintf(stderr, "Usage: uart-db [serial port]\n");
+    fprintf(stderr, "Usage: rvdb [serial port]\n");
     exit(EXIT_FAILURE);
 }
 

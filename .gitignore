@@ -119,7 +119,8 @@ m4/lt~obsolete.m4
 # (which is called by configure script))
 Makefile
 
-# build location
+# misc
 build
 rvdb
 compile_commands.json
+.cache

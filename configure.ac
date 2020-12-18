@@ -1,4 +1,4 @@
-AC_INIT([rvdb], [1.3])
+AC_INIT([rvdb], [1.4])
 
 AM_INIT_AUTOMAKE
 

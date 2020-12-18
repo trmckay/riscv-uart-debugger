@@ -20,7 +20,7 @@ word_t get_num(ht_t *vars, char *tok) {
 }
 
 // loads user defined variables into program from path
-// default: ~/.config/uart-db/config
+// default: ~/.config/rvdb/config
 // returns number of variables found
 int populate_vars(ht_t *vars_ht, char **keys, word_t *values, char *path) {
     char *line_buf = NULL, *str_key;

@@ -1,7 +1,7 @@
 .\" Manpage for rvdb
 .\" trmckay@calpoly.edu
 
-.TH rvdb 1 "17 Dec, 2020" "1.3" "rvdb man page"
+.TH rvdb 1 "17 Dec, 2020" "1.4" "rvdb man page"
 
 .SH NAME
 rvdb [DEVICE] \- start debugging a device
@@ -76,6 +76,19 @@ Read a byte from the given address in memory.
 Write the given data as a byte to the given address in memory.
 
 Note: numerical arguments can be entered as decimal or hex with a '0x' prefix.
+
+.SH CONFIGURATION
+
+.TP
+Variables can be permanently defined in '~/.config/rvdb/config' as newline separated key-value pairs. Examples:
+
+SSEG 0x110C0000
+
+LEDS 0x11000000
+
+DAT1 17
+
+DAT2 019
 
 .SH BUGS
 Stepping behaves unpredictably.
