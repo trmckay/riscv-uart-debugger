@@ -81,7 +81,7 @@
             "Execute external shell commands with a leading '!'.\n"            \
             "Example: '! %s' or '!%s'\n"                                       \
             "Enter 'h' for more information.\n",                               \
-            line, line);
+            (L), (L));
 
 void restore_term(int serial_port);
 void debug_cli(char *path, int serial_port);
