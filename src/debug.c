@@ -373,8 +373,8 @@ void mcu_terminal(int serial_port) {
     mcu_mem_read_byte(serial_port, TERM_STAT_ADDR, &stat_buf);
     if (stat_buf) {
       mcu_mem_read_byte(serial_port, TERM_CHAR_ADDR, &char_buf);
-      printf("%d", char_buf);
-      mcu_mem_write_byte(serial_port, TERM_STAT_ADDR, 0);
+      printf("%c", char_buf);
+      mcu_mem_write_byte(serial_port, TERM_STAT_ADDR, (byte_t)0);
     }
   }
 }
