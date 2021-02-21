@@ -24,6 +24,9 @@
 #define ERR_TIMEOUT 2
 #define ERR_CLIENT 3
 
+#define TERM_CHAR_ADDR 0x110B001
+#define TERM_STAT_ADDR 0x110B000
+
 typedef struct tg {
     int serial_port;
     ht_t *variables;
@@ -48,5 +51,6 @@ int mcu_mem_write_byte(int serial_port, word_t addr, byte_t data);
 int mcu_reg_write(int serial_port, word_t addr, word_t data);
 int mcu_add_breakpoint(int serial_port, word_t addr);
 int mcu_rm_breakpoint(int serial_port, word_t index);
+void mcu_terminal(int serial_port);
 
 #endif

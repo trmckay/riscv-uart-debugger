@@ -31,6 +31,7 @@
 #define MEM_WR_W_TOKEN "mww"
 #define MEM_RD_B_TOKEN "mrb"
 #define MEM_WR_B_TOKEN "mwb"
+#define TERM_TOKEN "term"
 
 #define X0 "zero"
 #define X1 "ra"
@@ -65,22 +66,22 @@
 #define X30 "t5"
 #define X31 "t6"
 
-#define HELP_MSG                                                               \
-    "RISC-V UART Debugger (rvdb) v1.4 | Trevor McKay "                         \
-    "<trmckay@calpoly.edu>\n\n"                                                \
-    "USAGE\n"                                                                  \
-    "    rvdb [device]\n\n"                                                    \
-    "MORE INFO\n"                                                              \
+#define HELP_MSG                                                                                   \
+    "RISC-V UART Debugger (rvdb) v1.4 | Trevor McKay "                                             \
+    "<trmckay@calpoly.edu>\n\n"                                                                    \
+    "USAGE\n"                                                                                      \
+    "    rvdb [device]\n\n"                                                                        \
+    "MORE INFO\n"                                                                                  \
     "    man rvdb\n"
 
 #define HELP() printf(HELP_MSG)
 
-#define INVLD_CMD(L)                                                           \
-    fprintf(stderr,                                                            \
-            "Error: unrecognized command\n"                                    \
-            "Execute external shell commands with a leading '!'.\n"            \
-            "Example: '! %s' or '!%s'\n"                                       \
-            "Enter 'h' for more information.\n",                               \
+#define INVLD_CMD(L)                                                                               \
+    fprintf(stderr,                                                                                \
+            "Error: unrecognized command\n"                                                        \
+            "Execute external shell commands with a leading '!'.\n"                                \
+            "Example: '! %s' or '!%s'\n"                                                           \
+            "Enter 'h' for more information.\n",                                                   \
             (L), (L));
 
 void restore_term(int serial_port);
