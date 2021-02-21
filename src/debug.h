@@ -24,8 +24,8 @@
 #define ERR_TIMEOUT 2
 #define ERR_CLIENT 3
 
-#define TERM_CHAR_ADDR 0x110B001
-#define TERM_STAT_ADDR 0x110B000
+#define TERM_CHAR_ADDR 0x11010000
+#define TERM_STAT_ADDR 0x11010000
 
 typedef struct tg {
     int serial_port;

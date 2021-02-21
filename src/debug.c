@@ -368,13 +368,13 @@ int mcu_program(int serial_port, char *path, int fast) {
 // Launch a terminal listener.
 void mcu_terminal(int serial_port) {
   while (1) {
-    byte_t stat_buf;
-    byte_t char_buf;
-    mcu_mem_read_byte(serial_port, TERM_STAT_ADDR, &stat_buf);
+    word_t stat_buf;
+    word_t char_buf;
+    mcu_mem_read_word(serial_port, TERM_STAT_ADDR, &stat_buf);
     if (stat_buf) {
-      mcu_mem_read_byte(serial_port, TERM_CHAR_ADDR, &char_buf);
-      printf("%c", char_buf);
-      mcu_mem_write_byte(serial_port, TERM_STAT_ADDR, (byte_t)0);
+      mcu_mem_read_word(serial_port, TERM_CHAR_ADDR, &char_buf);
+      printf("%c", (char)char_buf);
+      mcu_mem_write_word(serial_port, TERM_STAT_ADDR, (byte_t)0);
     }
   }
 }
