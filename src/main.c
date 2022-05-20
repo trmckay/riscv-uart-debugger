@@ -27,15 +27,18 @@ int main(int argc, char *argv[]) {
     char *term_path;
 
     parse_args(argc, argv, &term_path);
-    if (term_path == NULL)
-        autodetect_and_start();
-    else
+
+    if (term_path == NULL) {
+        usage("Specify device");
+    } else {
         start_debugger(term_path);
+    }
 }
 
 void usage(char *msg) {
     if (msg != NULL)
         fprintf(stderr, "%s\n", msg);
+
     fprintf(stderr, "Usage: rvdb [serial port]\n");
     exit(EXIT_FAILURE);
 }
@@ -95,32 +98,4 @@ int try_open(char *path) {
         close(serial_port);
         return 1;
     }
-}
-
-void autodetect_and_start() {
-    DIR *dir;
-    struct dirent *ent;
-    char full_path[256] = "/dev/";
-
-    printf("Autodetecting device...\n");
-
-    if ((dir = opendir("/dev")) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
-            if (starts_with(ent->d_name, "ttyS") ||
-                starts_with(ent->d_name, "ttyUSB")) {
-                strcat(full_path, ent->d_name);
-                if (try_open(full_path)) {
-                    printf("Found: %s\n", full_path);
-                    start_debugger(full_path);
-                    closedir(dir);
-                    return;
-                }
-                full_path[5] = 0;
-            }
-        }
-        closedir(dir);
-    } else
-        perror("");
-    fprintf(stderr, "Error: autodetect failed, please specify device\n");
-    exit(EXIT_FAILURE);
 }
